@@ -19,6 +19,9 @@
 #include "glfw_adapter.h"
 #include "array_safety.h"
 
+//#include <Eigen/Eigen>
+//using namespace Eigen;
+
 char error[1000];
 int mode = 0;
 
@@ -39,6 +42,14 @@ double lasty = 0;
 bool start_sim = false;
 bool next_step = false;
 unsigned int key_s_counter = 0;
+
+namespace CharaterControl
+{
+    mjtNum torPos[3];
+    mjtNum* J;
+    mjtNum* J_transpose;
+    mjtNum* jointTorque;
+}
 
 // keyboard callback
 void keyboard(GLFWwindow* window, int key, int scancode, int act, int mods)
@@ -126,7 +137,7 @@ void scroll(GLFWwindow* window, double xoffset, double yoffset)
     mjv_moveCamera(m, mjMOUSE_ZOOM, 0, -0.05 * yoffset, &scn, &cam);
 }
 
-void mController(const mjModel* m, mjData* d)
+void CharaterPDController(const mjModel* m, mjData* d)
 {
     mjtNum kp = 5;
     mjtNum kd = 0.1;
@@ -134,6 +145,47 @@ void mController(const mjModel* m, mjData* d)
     {
         d->ctrl[i] = kp * (0 - d->qpos[i + 7]) - kd * d->qvel[i + 6];
     }
+
+    mjtNum rootPos[3], rootVel[3];
+    mju_copy3(rootPos, &d->xipos[3]);
+    mju_copy3(rootVel, &d->cvel[6 + 3]);
+    
+    mjtNum err[3];
+    mju_sub3(err, CharaterControl::torPos, rootPos);
+    //printf("%f %f %f\n", err[0], err[1], err[2]);
+    mjtNum mp[3];
+    mju_scl3(mp, err, kp);
+    //printf("%f %f %f\n", mp[0], mp[1], mp[2]);
+    mjtNum md[3];
+    mju_scl3(md, rootVel, kd);
+    //printf("%f %f %f\n", md[0], md[1], md[2]);
+    mjtNum mf[3];
+    mju_sub3(mf, mp, md);
+    
+    mj_jacBodyCom(m, d, CharaterControl::J, NULL, 1);
+    mju_transpose(CharaterControl::J_transpose, CharaterControl::J, m->nv, 3);
+    mju_mulMatVec(CharaterControl::jointTorque, CharaterControl::J_transpose, mf, m->nv, 3);
+    for (int i = 0; i < 15; i++)
+    {
+        //d->ctrl[i] += CharaterControl::jointTorque[i + 6];
+    }
+}
+
+void InitializeController(const mjModel* m, mjData* d)
+{
+    mj_forward(m, d);
+    mjcb_control = CharaterPDController;
+    mju_copy3(CharaterControl::torPos, &d->xipos[3]);
+    CharaterControl::J = new mjtNum[3 * m->nv];
+    CharaterControl::J_transpose = new mjtNum[3 * m->nv];
+    CharaterControl::jointTorque = new mjtNum[m->nv];
+}
+
+void CleanController()
+{
+    delete CharaterControl::J;
+    delete CharaterControl::J_transpose;
+    delete CharaterControl::jointTorque;
 }
 
 int main(void)
@@ -184,8 +236,7 @@ int main(void)
     cam.lookat[1] = arr_view[4];
     cam.lookat[2] = arr_view[5];
 
-    mj_forward(m, d);
-    mjcb_control = mController;
+    InitializeController(m, d);
     // run main loop, target real-time simulation and 60 fps rendering
     while (!glfwWindowShouldClose(window)) {
         if (start_sim || next_step)
@@ -215,6 +266,7 @@ int main(void)
         // process pending GUI events, call GLFW callbacks
         glfwPollEvents();
     }
+    CleanController();
 
     // close GLFW, free visualization storage
     glfwTerminate();

@@ -183,7 +183,8 @@ void BallJointController(const mjModel* m, mjData* d)
 }
 void InitializeController(const mjModel* m, mjData* d)
 {
-   /* {
+    mj_forward(m, d);
+    /* {
         mjcb_control = CharaterPDController;
         mju_copy3(CharaterControl::torPos, &d->xipos[3]);
         CharaterControl::J = new mjtNum[3 * m->nv];

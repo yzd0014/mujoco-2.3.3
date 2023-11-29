@@ -59,7 +59,7 @@ void keyboard(GLFWwindow* window, int key, int scancode, int act, int mods)
     {
         start_sim = !start_sim;
     }
-    if (key == GLFW_KEY_S)
+    if (key == GLFW_KEY_RIGHT)
     {
         key_s_counter++;
         //std::cout << key_s_counter << std::endl;
@@ -130,11 +130,30 @@ void scroll(GLFWwindow* window, double xoffset, double yoffset)
     // emulate vertical mouse motion = 5% of window height
     mjv_moveCamera(m, mjMOUSE_ZOOM, 0, -0.05 * yoffset, &scn, &cam);
 }
+void TossController(const mjModel* m, mjData* d)
+{
+    if (d->time > 0.1)
+    {
+        d->ctrl[1] = 1;
+        d->ctrl[3] = 1;
+	}
+    //std::cout << d->time << std::endl;
+    if (d->time > 0.45)
+    {
+        d->ctrl[4] = 0;
+    }
+    if (d->ncon > 0 && ((d->contact[0].geom1 == 0 && d->contact[1].geom2 == 4) || (d->contact[0].geom1 == 4 && d->contact[1].geom2 == 0)))
+    {
+        std::cout << d->xpos[12] << std::endl;
+        start_sim = false;
+    }
+}
 
 void InitializeController(const mjModel* m, mjData* d)
 {
     mj_forward(m, d);
-  
+    mjcb_control = TossController;
+    d->ctrl[4] = 1;
     mj_forward(m, d);
 }
 
@@ -142,8 +161,7 @@ int main(void)
 {
     // load model from file and check for errors
     //m = mj_loadXML("humanoid.xml", NULL, error, 1000);
-    m = mj_loadXML("ball_joint.xml", NULL, error, 1000);
-    fs.open("../matlab/plot.csv", std::ios::out | std::ios::app);
+    m = mj_loadXML("toss.xml", NULL, error, 1000);
     if (!m)
     {
         printf("%s\n", error);
@@ -179,7 +197,7 @@ int main(void)
     glfwSetMouseButtonCallback(window, mouse_button);
     glfwSetScrollCallback(window, scroll);
 
-    double arr_view[] = { 90, -20, 10, 0, 0.000000, 1 };
+    double arr_view[] = { 160, -10, 5, 0, 0.000000, 1 };
     cam.azimuth = arr_view[0];
     cam.elevation = arr_view[1];
     cam.distance = arr_view[2];
@@ -224,6 +242,5 @@ int main(void)
     mjr_freeContext(&con);
 
     mj_deleteData(d);
-    fs.close();
     return 0;
 }

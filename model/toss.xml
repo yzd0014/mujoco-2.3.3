@@ -1,7 +1,7 @@
 <mujoco>
     <!-- min distance from root to endfactor is 1.766, max is 2 -->
-    <option timestep="0.001">
-		<flag gravity="disable"/>
+    <option timestep="0.005">
+		<flag gravity="enable"/>
 	</option>
     <size nuserdata="3"/>
     <visual>
@@ -25,7 +25,14 @@
             <geom name="link1" pos="0 0 0.5" type="cylinder" size="0.05 .5" rgba="1 1 1 1" mass="1"/>
             <site name="s6" pos="0.06 0 0.4" size="0.02"/>
             <site name="s7" pos="-0.06 0 0.4" size="0.02"/>
+            <body name="end_factor" pos="0 0 0" euler="0 0 0">
+                <geom name="link1_child" type="box" size="0.2 0.2 0.01"  rgba="0 0 1 1" mass="1" margin=".3" gap=".3"/>
+            </body>
          </body>
+      </body>
+      <body name="projectile" pos="0 0 0.35">
+        <joint type="free"/>
+        <geom type="box" size="0.1 0.1 0.1"/>
       </body>
    </worldbody>
    <tendon>
@@ -53,10 +60,11 @@
        </spatial>
    </tendon>
    <actuator> 
-        <muscle  name="r-muscle" tendon="r-tendon" range="0.75 1.15" scale="400"/>
-        <muscle  name="l-muscle" tendon="l-tendon" range="0.75 1.15" scale="400"/>
-        <muscle  name="r-ctrl" tendon="r-middle" range="0.75 1.15" scale="400"/>
-        <muscle  name="l-ctrl" tendon="l-middle" range="0.75 1.15" scale="400"/>
+        <muscle  name="r-muscle" tendon="r-tendon" range="0.75 1.15" scale="4000"/>
+        <muscle  name="l-muscle" tendon="l-tendon" range="0.75 1.15" scale="4000"/>
+        <muscle  name="r-ctrl" tendon="r-middle" range="0.75 1.15" scale="4000"/>
+        <muscle  name="l-ctrl" tendon="l-middle" range="0.75 1.15" scale="4000"/>
+        <adhesion name="adhesion" body="end_factor" ctrlrange="0 1" gain="1000"/>
         <motor name="motor0" joint="joint0"/>
         <motor name="motor1" joint="joint1"/>
    </actuator>

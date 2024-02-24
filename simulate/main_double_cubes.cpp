@@ -255,8 +255,27 @@ namespace {
         return mnew;
     }
 
+    void CoordinateTranslation(mjtNum* i_v, mjtNum* o_v)
+    {
+		o_v[0] = i_v[0];
+		o_v[1] = -i_v[2];
+		o_v[2] = i_v[1];
+    }
+    
+    void InitializeController()
+    {
+        mjtNum qvel0[3] = { 0.0, 4.0, 0.0};
+        mjtNum qvel1[3] = { -2.0, -8.0, 1.4 };
+        
+        CoordinateTranslation(qvel0, d->qvel);
+        CoordinateTranslation(qvel1, d->qvel + 3);
+        mj_forward(m, d);
+    }
+
     // simulate in background thread (while rendering in main thread)
     void PhysicsLoop(mj::Simulate& sim) {
+        sim.run = FALSE;
+        InitializeController();
         // cpu-sim syncronization point
         std::chrono::time_point<mj::Simulate::Clock> syncCPU;
         mjtNum syncSim = 0;
@@ -369,6 +388,7 @@ namespace {
 
                             // run single step, let next iteration deal with timing
                             mj_step(m, d);
+                            std::cout << "energy: " << d->energy[1] << std::endl;
                         }
 
                         // in-sync: step until ahead of cpu
@@ -395,6 +415,7 @@ namespace {
 
                                 // call mj_step
                                 mj_step(m, d);
+                                std::cout << "energy: " << d->energy[1] << std::endl;
 
                                 // break if reset
                                 if (d->time < prevSim) {
@@ -422,6 +443,7 @@ namespace {
 
 void PhysicsThread(mj::Simulate* sim, const char* filename) {
     // request loadmodel if file given (otherwise drag-and-drop)
+    filename = "F:\\mujoco-2.3.3\\model\\ball_joint.xml";
     if (filename != nullptr) {
         m = LoadModel(filename, *sim);
         if (m) d = mj_makeData(m);

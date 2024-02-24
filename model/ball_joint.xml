@@ -1,6 +1,6 @@
 <mujoco>
-    <option timestep="0.01">
-		<flag gravity="enable"/>
+    <option timestep="0.02">
+		<flag gravity="disable" energy="enable"/>
 	</option>
     <worldbody>
         <light diffuse=".5 .5 .5" pos="0 0 3" dir="0 0 -1"/>
@@ -8,10 +8,10 @@
         <body pos="1 1 -1" euler="0 0 0">
             <joint name="joint0" type="ball" pos="-1 -1 1"/>
             <geom name="box0" type="box" size="1 1 1" rgba="0 .9 0 1" mass="1"/>
-                <!-- <body pos="2 2 -2" euler="0 0 0"> -->
-                <body pos="2 -2 -2" euler="0 0 0">
-                    <!-- <joint name="joint1" type="ball" pos="-1 -1 1"/> -->
-                    <joint name="joint1" type="ball" pos="-1 1 1"/>
+                <body pos="2 2 -2" euler="0 0 0">
+                <!-- <body pos="2 -2 -2" euler="0 0 0"> -->
+                    <joint name="joint1" type="ball" pos="-1 -1 1"/>
+                    <!-- <joint name="joint1" type="ball" pos="-1 1 1"/> -->
                     <geom name="box1" type="box" size="1 1 1" rgba="0 .9 0 1" mass="1"/>
                 </body>
         </body>

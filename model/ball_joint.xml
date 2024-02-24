@@ -1,5 +1,5 @@
 <mujoco>
-    <option timestep="0.001">
+    <option timestep="0.01">
 		<flag gravity="enable"/>
 	</option>
     <worldbody>

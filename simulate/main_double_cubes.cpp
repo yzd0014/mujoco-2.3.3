@@ -62,6 +62,8 @@ namespace {
 
     using Seconds = std::chrono::duration<double>;
 
+    mj::Simulate* m_sim;
+
 
     //---------------------------------------- plugin handling -----------------------------------------
 
@@ -262,6 +264,24 @@ namespace {
 		o_v[2] = i_v[1];
     }
     
+    void MyCallback(const mjModel* m, mjData* d)
+    {
+        mjtNum vec[3];
+        mju_scl3(vec, &d->subtree_linvel[3], m->body_subtreemass[1]);
+        mjtNum vec1[3];
+        mju_cross(vec1, &d->subtree_com[3], vec);
+        mjtNum vec2[3];
+        mju_add3(vec2, vec1, &d->subtree_angmom[3]);
+        mjtNum angmomNorm = 0;
+        angmomNorm = mju_norm3(vec2);
+        
+        if (m_sim->run)
+        {
+            std::cout << "energy: " << d->energy[1] << std::endl;
+            std::cout << "angular momentum norm: " << angmomNorm << std::endl << std::endl;
+        }
+    }
+
     void InitializeController()
     {
         mjtNum qvel0[3] = { 0.0, 4.0, 0.0};
@@ -270,6 +290,7 @@ namespace {
         CoordinateTranslation(qvel0, d->qvel);
         CoordinateTranslation(qvel1, d->qvel + 3);
         mj_forward(m, d);
+        mjcb_control = MyCallback;
     }
 
     // simulate in background thread (while rendering in main thread)
@@ -388,7 +409,6 @@ namespace {
 
                             // run single step, let next iteration deal with timing
                             mj_step(m, d);
-                            std::cout << "energy: " << d->energy[1] << std::endl;
                         }
 
                         // in-sync: step until ahead of cpu
@@ -415,7 +435,6 @@ namespace {
 
                                 // call mj_step
                                 mj_step(m, d);
-                                std::cout << "energy: " << d->energy[1] << std::endl;
 
                                 // break if reset
                                 if (d->time < prevSim) {
@@ -444,6 +463,7 @@ namespace {
 void PhysicsThread(mj::Simulate* sim, const char* filename) {
     // request loadmodel if file given (otherwise drag-and-drop)
     filename = "F:\\mujoco-2.3.3\\model\\ball_joint.xml";
+    m_sim = sim;
     if (filename != nullptr) {
         m = LoadModel(filename, *sim);
         if (m) d = mj_makeData(m);

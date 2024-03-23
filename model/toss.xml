@@ -9,7 +9,8 @@
     </visual>
    <worldbody>
       <light diffuse=".5 .5 .5" pos="0 0 3" dir="0 0 -1"/>
-      <geom type="plane" size="1 1 0.1" rgba=".9 0 0 1"/>
+      <geom type="plane" size="1 1 0.01" rgba=".9 0 0 1"/>
+      <site name="target1" pos="-10 0 0" size="0.2" rgba="0 1 0 .3"/>
       
       <site name="s0" pos="0.1 0 2.5" size="0.02"/>
       <site name="s2" pos="-0.1 0 2.5" size="0.02"/>
@@ -20,19 +21,16 @@
          <site name="s3" pos="-0.06 0 0.4" size="0.02"/>
          <site name="s4" pos="0.1 0 0" size="0.02"/>
          <site name="s5" pos="-0.1 0 0" size="0.02"/>
-         <body pos="0 0 -1" euler="0 0 0">
+         <body name="end_factor" pos="0 0 -1" euler="0 0 0">
             <joint name="joint1" type="hinge" axis="0 -1 0" pos="0 0 1" damping="0.001" limited="true" range="-56 56"/>
             <geom name="link1" pos="0 0 0.5" type="cylinder" size="0.05 .5" rgba="1 1 1 1" mass="1"/>
             <site name="s6" pos="0.06 0 0.4" size="0.02"/>
             <site name="s7" pos="-0.06 0 0.4" size="0.02"/>
-            <body name="end_factor" pos="0 0 0" euler="0 0 0">
-                <geom name="link1_child" type="box" size="0.2 0.2 0.01"  rgba="0 0 1 1" mass="1" margin=".3" gap=".3"/>
-            </body>
          </body>
       </body>
-      <body name="projectile" pos="0 0 0.35">
+      <body name="projectile" pos="0 0 0.39">
         <joint type="free"/>
-        <geom type="box" size="0.1 0.1 0.1"/>
+        <geom type="box" size="0.1 0.1 0.1" mass="0.1"/>
       </body>
    </worldbody>
    <tendon>
@@ -59,13 +57,13 @@
             <site site="s7"/>
        </spatial>
    </tendon>
+   <equality>
+    <weld body1="end_factor" body2="projectile"/>
+   </equality>
    <actuator> 
-        <muscle  name="r-muscle" tendon="r-tendon" range="0.75 1.15" scale="4000"/>
-        <muscle  name="l-muscle" tendon="l-tendon" range="0.75 1.15" scale="4000"/>
-        <muscle  name="r-ctrl" tendon="r-middle" range="0.75 1.15" scale="4000"/>
-        <muscle  name="l-ctrl" tendon="l-middle" range="0.75 1.15" scale="4000"/>
-        <adhesion name="adhesion" body="end_factor" ctrlrange="0 1" gain="1000"/>
-        <motor name="motor0" joint="joint0"/>
-        <motor name="motor1" joint="joint1"/>
+        <muscle  name="r-muscle" tendon="r-tendon" range="0.75 1.15" scale="400"/>
+        <muscle  name="l-muscle" tendon="l-tendon" range="0.75 1.15" scale="400"/>
+        <muscle  name="r-ctrl" tendon="r-middle" range="0.75 1.15" scale="400"/>
+        <muscle  name="l-ctrl" tendon="l-middle" range="0.75 1.15" scale="400"/>
    </actuator>
 </mujoco>

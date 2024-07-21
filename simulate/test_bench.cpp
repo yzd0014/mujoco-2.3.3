@@ -20,6 +20,7 @@
 #include "array_safety.h"
 
 std::fstream fs;
+int testCase = 2;
 
 //#include <Eigen/Eigen>
 //using namespace Eigen;
@@ -53,6 +54,13 @@ namespace CharaterControl
     mjtNum* jointTorque;
 }
 int tickCount = -1;
+
+void CoordinateTranslation(mjtNum* i_v, mjtNum* o_v)
+{
+    o_v[0] = i_v[0];
+    o_v[1] = -i_v[2];
+    o_v[2] = i_v[1];
+}
 
 // keyboard callback
 void keyboard(GLFWwindow* window, int key, int scancode, int act, int mods)
@@ -142,32 +150,48 @@ void scroll(GLFWwindow* window, double xoffset, double yoffset)
 
 void Tick(const mjModel* m, mjData* d)
 {
-    mjtNum vel[3];
-    mju_quat2Vel(vel, d->qpos, 1);
-    mjtNum vel_norm = mju_norm3(vel);
-    //std::cout << "rot_norm: " << vel_norm << std::endl;
+    if (testCase == 0 || testCase == 1)
+    {
+        mjtNum vel[3];
+        mju_quat2Vel(vel, d->qpos, 1);
+        mjtNum vel_norm = mju_norm3(vel);
+        //std::cout << "rot_norm: " << vel_norm << std::endl;
+
+        //std::cout << m->body_inertia[3] << " " << m->body_inertia[4] << " " << m->body_inertia[5] << std::endl;
+        mjtNum i_quat[3] = { d->qpos[1], d->qpos[2],  d->qpos[3] };
+        mjtNum o_quat[3];
+        CoordinateTranslation(i_quat, o_quat);
+        //std::cout << d->qpos[0] << " " << o_quat[0] << " " << o_quat[1] << " " << o_quat[2] << std::endl;
+
+        //std::cout << d->qvel[0] << " " << d->qvel[1] << " " << d->qvel[2] << std::endl;
+    }
 }
 
 void InitializeController(const mjModel* m, mjData* d)
 {
- //   mjtNum rotQuat[4];
-	////mjtNum targetVec[3] = { 0, 1, 1 };
- //   mjtNum targetVec[3] = { 0, 0, 1 };
-	//mju_quatZ2Vec(rotQuat, targetVec);
-	//mjtNum rotMat[9];
-	//mju_quat2Mat(rotMat, rotQuat);
- //   
- //   mjtNum localW[3] = { 0, 0, 1 };
-	//mjtNum globalW[3];
-	//mju_rotVecMat(globalW, localW, rotMat);
-	////std::cout << globalW[0] << " " << globalW[1] << " " << globalW[2] << std::endl;
+    if (testCase == 0)
+    {
+        d->qvel[0] = -2;
+        d->qvel[1] = 0;
+        d->qvel[2] = 2;
+    }
+    else if (testCase == 1)
+    {
+        mjtNum rotQuat[4];
+        mjtNum targetVec[3] = { 0, 1, 1 };
+        //mjtNum targetVec[3] = { 0, 0, 1 };
+        mju_quatZ2Vec(rotQuat, targetVec);
+        mjtNum rotMat[9];
+        mju_quat2Mat(rotMat, rotQuat);
+   
+        mjtNum localW[3] = { 0, 0, 1 };
+        mjtNum globalW[3];
+        mju_rotVecMat(globalW, localW, rotMat);
+        //std::cout << globalW[0] << " " << globalW[1] << " " << globalW[2] << std::endl;
 
- //   for (int i = 0; i < 4; i++) d->qpos[i] = rotQuat[i];
- //   for (int i = 0; i < 3; i++) d->qvel[i] = localW[i];
-  
-    d->qvel[0] = -2;
-    d->qvel[1] = 0;
-    d->qvel[2] = 2;
+        for (int i = 0; i < 4; i++) d->qpos[i] = rotQuat[i];
+        for (int i = 0; i < 3; i++) d->qvel[i] = localW[i];
+    }
     
     mj_forward(m, d);
     mjcb_control= Tick;
@@ -184,7 +208,14 @@ int main(void)
 {
     // load model from file and check for errors
     //m = mj_loadXML("humanoid.xml", NULL, error, 1000);
-    m = mj_loadXML("single_ball_joint.xml", NULL, error, 1000);
+    if (testCase == 0 || testCase == 1)
+    {
+        m = mj_loadXML("single_ball_joint.xml", NULL, error, 1000);
+    }
+    else if (testCase == 2)
+    {
+        m = mj_loadXML("lock_chain.xml", NULL, error, 1000);
+    }
 
     if (!m)
     {

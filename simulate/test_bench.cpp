@@ -20,7 +20,7 @@
 #include "array_safety.h"
 
 std::fstream fs;
-int testCase = 2;
+int testCase = 3;
 
 //#include <Eigen/Eigen>
 //using namespace Eigen;
@@ -157,7 +157,8 @@ void Tick(const mjModel* m, mjData* d)
         mjtNum vel_norm = mju_norm3(vel);
         //std::cout << "rot_norm: " << vel_norm << std::endl;
 
-        //std::cout << m->body_inertia[3] << " " << m->body_inertia[4] << " " << m->body_inertia[5] << std::endl;
+        std::cout << m->body_inertia[3] << " " << m->body_inertia[4] << " " << m->body_inertia[5] << std::endl;
+		std::cout << m->body_mass[1] << std::endl;
         mjtNum i_quat[3] = { d->qpos[1], d->qpos[2],  d->qpos[3] };
         mjtNum o_quat[3];
         CoordinateTranslation(i_quat, o_quat);
@@ -175,7 +176,7 @@ void InitializeController(const mjModel* m, mjData* d)
         d->qvel[1] = 0;
         d->qvel[2] = 2;
     }
-    else if (testCase == 1)
+	else if (testCase == 1)//single ball joint invarience to rotation
     {
         mjtNum rotQuat[4];
         mjtNum targetVec[3] = { 0, 1, 1 };
@@ -192,7 +193,7 @@ void InitializeController(const mjModel* m, mjData* d)
         for (int i = 0; i < 4; i++) d->qpos[i] = rotQuat[i];
         for (int i = 0; i < 3; i++) d->qvel[i] = localW[i];
     }
-    else if (testCase == 2)
+	else if (testCase == 2)//lock chain
     {
         mjtNum targetVec[3] = { -1, 0, 1 };
         mjtNum rotQuat[4];
@@ -208,7 +209,22 @@ void InitializeController(const mjModel* m, mjData* d)
 		d->qvel[10] = globalW[2];
         //d->qvel[8] = 1;
     }
-    
+    else if (testCase == 3) //lock chain mimic
+    {
+        mjtNum rotQuat[4];
+        mjtNum targetVec[3] = { -1, 0, 1 };
+        mju_quatZ2Vec(rotQuat, targetVec);
+		d->qpos[4] = rotQuat[0];
+		d->qpos[5] = rotQuat[1];
+		d->qpos[6] = rotQuat[2];
+		d->qpos[7] = rotQuat[3];
+        
+        mjtNum localW[3] = { 0, 0, -0.5 };
+        d->qvel[3] = localW[0];
+        d->qvel[4] = localW[1];
+        d->qvel[5] = localW[2];
+    }
+
     mj_forward(m, d);
     mjcb_control= Tick;
 }
@@ -231,6 +247,10 @@ int main(void)
     else if (testCase == 2)
     {
         m = mj_loadXML("lock_chain.xml", NULL, error, 1000);
+    }
+    else if (testCase == 3)
+    {
+        m = mj_loadXML("double_ball_joint.xml", NULL, error, 1000);
     }
 
     if (!m)

@@ -192,6 +192,22 @@ void InitializeController(const mjModel* m, mjData* d)
         for (int i = 0; i < 4; i++) d->qpos[i] = rotQuat[i];
         for (int i = 0; i < 3; i++) d->qvel[i] = localW[i];
     }
+    else if (testCase == 2)
+    {
+        mjtNum targetVec[3] = { -1, 0, 1 };
+        mjtNum rotQuat[4];
+        mju_quatZ2Vec(rotQuat, targetVec);
+		mjtNum rotMat[9];
+		mju_quat2Mat(rotMat, rotQuat);
+		mjtNum localW[3] = { 0.2, 0, 0 };
+		mjtNum globalW[3];
+		mju_rotVecMat(globalW, localW, rotMat);
+      
+        d->qvel[8] = globalW[0];
+		d->qvel[9] = globalW[1];
+		d->qvel[10] = globalW[2];
+        //d->qvel[8] = 1;
+    }
     
     mj_forward(m, d);
     mjcb_control= Tick;

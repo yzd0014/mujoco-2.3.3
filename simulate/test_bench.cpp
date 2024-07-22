@@ -20,13 +20,13 @@
 #include "array_safety.h"
 
 std::fstream fs;
-int testCase = 3;
+int testCase = 4;
 
 //#include <Eigen/Eigen>
 //using namespace Eigen;
 
 char error[1000];
-int mode = 0;
+int mode = 4;
 
 mjModel* m = NULL;                  // MuJoCo model
 mjData* d = NULL;                   // MuJoCo data
@@ -224,6 +224,21 @@ void InitializeController(const mjModel* m, mjData* d)
         d->qvel[4] = localW[1];
         d->qvel[5] = localW[2];
     }
+	else if (testCase == 4) //twist invarience for two ball joints
+    {
+        mjtNum rotQuat[4];
+        mjtNum targetVec[3] = { 0, 1, 1 };
+        mju_quatZ2Vec(rotQuat, targetVec);
+        d->qpos[0] = rotQuat[0];
+        d->qpos[1] = rotQuat[1];
+        d->qpos[2] = rotQuat[2];
+        d->qpos[3] = rotQuat[3];
+
+        mjtNum localW[3] = { 0, 0, 1 };
+        d->qvel[3] = localW[0];
+        d->qvel[4] = localW[1];
+        d->qvel[5] = localW[2];
+    }
 
     mj_forward(m, d);
     mjcb_control= Tick;
@@ -248,7 +263,7 @@ int main(void)
     {
         m = mj_loadXML("lock_chain.xml", NULL, error, 1000);
     }
-    else if (testCase == 3)
+    else if (testCase == 3 || testCase == 4)
     {
         m = mj_loadXML("double_ball_joint.xml", NULL, error, 1000);
     }

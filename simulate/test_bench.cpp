@@ -20,7 +20,7 @@
 #include "array_safety.h"
 
 std::fstream fs;
-int testCase = 4;
+int testCase = 5;
 
 //#include <Eigen/Eigen>
 //using namespace Eigen;
@@ -157,8 +157,8 @@ void Tick(const mjModel* m, mjData* d)
         mjtNum vel_norm = mju_norm3(vel);
         //std::cout << "rot_norm: " << vel_norm << std::endl;
 
-        std::cout << m->body_inertia[3] << " " << m->body_inertia[4] << " " << m->body_inertia[5] << std::endl;
-		std::cout << m->body_mass[1] << std::endl;
+       /* std::cout << m->body_inertia[3] << " " << m->body_inertia[4] << " " << m->body_inertia[5] << std::endl;
+		std::cout << m->body_mass[1] << std::endl;*/
         mjtNum i_quat[3] = { d->qpos[1], d->qpos[2],  d->qpos[3] };
         mjtNum o_quat[3];
         CoordinateTranslation(i_quat, o_quat);
@@ -172,7 +172,7 @@ void InitializeController(const mjModel* m, mjData* d)
 {
     if (testCase == 0)
     {
-        d->qvel[0] = -2;
+        d->qvel[0] = 0;
         d->qvel[1] = 0;
         d->qvel[2] = 2;
     }
@@ -239,6 +239,16 @@ void InitializeController(const mjModel* m, mjData* d)
         d->qvel[4] = localW[1];
         d->qvel[5] = localW[2];
     }
+    else if (testCase == 5)
+    {
+        mjtNum rotQuat[4];
+        mjtNum targetVec[3] = { 1, 0, 0 };
+		mju_axisAngle2Quat(rotQuat, targetVec, M_PI/8);
+        d->qpos[4] = rotQuat[0];
+        d->qpos[5] = rotQuat[1];
+        d->qpos[6] = rotQuat[2];
+        d->qpos[7] = rotQuat[3];
+    }
 
     mj_forward(m, d);
     mjcb_control= Tick;
@@ -266,6 +276,10 @@ int main(void)
     else if (testCase == 3 || testCase == 4)
     {
         m = mj_loadXML("double_ball_joint.xml", NULL, error, 1000);
+    }
+    else if (testCase == 5)
+    {
+        m = mj_loadXML("multi_ball_joint.xml", NULL, error, 1000);
     }
 
     if (!m)

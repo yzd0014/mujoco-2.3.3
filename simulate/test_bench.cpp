@@ -20,7 +20,7 @@
 #include "array_safety.h"
 
 std::fstream fs;
-int testCase = 5;
+int testCase = 6;
 
 //#include <Eigen/Eigen>
 //using namespace Eigen;
@@ -166,6 +166,10 @@ void Tick(const mjModel* m, mjData* d)
 
         //std::cout << d->qvel[0] << " " << d->qvel[1] << " " << d->qvel[2] << std::endl;
     }
+    else if (testCase == 6)
+    {
+        std::cout << d->cvel[6] << " " << d->cvel[7] << " " << d->cvel[8] << std::endl;
+    }
 }
 
 void InitializeController(const mjModel* m, mjData* d)
@@ -249,6 +253,12 @@ void InitializeController(const mjModel* m, mjData* d)
         d->qpos[6] = rotQuat[2];
         d->qpos[7] = rotQuat[3];
     }
+    else if (testCase == 6 || testCase == 7)
+    {
+        d->qpos[0] = M_PI / 8;
+        d->qpos[1] = -M_PI / 8;
+		d->qvel[2] = 1;
+    }
 
     mj_forward(m, d);
     mjcb_control= Tick;
@@ -280,6 +290,14 @@ int main(void)
     else if (testCase == 5)
     {
         m = mj_loadXML("multi_ball_joint.xml", NULL, error, 1000);
+    }
+    else if (testCase == 6)
+    {
+        m = mj_loadXML("hinge_ball1.xml", NULL, error, 1000);
+    }
+    else if (testCase == 7)
+    {
+        m = mj_loadXML("three_hinge_cube.xml", NULL, error, 1000);
     }
 
     if (!m)

@@ -20,7 +20,8 @@
 #include "array_safety.h"
 
 std::fstream fs;
-int testCase = 6;
+int testCase = 8;
+double oldTime = 0;
 
 //#include <Eigen/Eigen>
 //using namespace Eigen;
@@ -55,11 +56,18 @@ namespace CharaterControl
 }
 int tickCount = -1;
 
-void CoordinateTranslation(mjtNum* i_v, mjtNum* o_v)
+void CoordinateEae2Mju(mjtNum* i_v, mjtNum* o_v)
 {
     o_v[0] = i_v[0];
     o_v[1] = -i_v[2];
     o_v[2] = i_v[1];
+}
+
+void CoordinateMju2Eae(mjtNum* i_v, mjtNum* o_v)
+{
+	o_v[0] = i_v[0];
+	o_v[1] = i_v[2];
+	o_v[2] = -i_v[1];
 }
 
 // keyboard callback
@@ -161,14 +169,25 @@ void Tick(const mjModel* m, mjData* d)
 		std::cout << m->body_mass[1] << std::endl;*/
         mjtNum i_quat[3] = { d->qpos[1], d->qpos[2],  d->qpos[3] };
         mjtNum o_quat[3];
-        CoordinateTranslation(i_quat, o_quat);
+        CoordinateEae2Mju(i_quat, o_quat);
         //std::cout << d->qpos[0] << " " << o_quat[0] << " " << o_quat[1] << " " << o_quat[2] << std::endl;
 
         //std::cout << d->qvel[0] << " " << d->qvel[1] << " " << d->qvel[2] << std::endl;
     }
     else if (testCase == 6)
     {
-        std::cout << d->cvel[6] << " " << d->cvel[7] << " " << d->cvel[8] << std::endl;
+       //std::cout << d->cvel[6] << " " << d->cvel[7] << " " << d->cvel[8] << std::endl;
+    }
+    else if (testCase == 8)
+    {
+        if (d->time == 0 || d->time - oldTime >= m->opt.timestep - 0.0000000001)
+        {
+            mjtNum mPos[3] = { 0, 0, 0 };
+            CoordinateMju2Eae(&d->xpos[3], mPos);
+            fs << d->time << " " << mPos[0] << " " << mPos[1] << " " << mPos[2]
+                << " " << d->qpos[0] << " " << d->qpos[1] << " " << d->qpos[2] << std::endl;
+			oldTime = d->time;
+        } 
     }
 }
 
@@ -255,9 +274,15 @@ void InitializeController(const mjModel* m, mjData* d)
     }
     else if (testCase == 6 || testCase == 7)
     {
-        d->qpos[0] = M_PI / 8;
-        d->qpos[1] = -M_PI / 8;
+        d->qpos[0] = 0;
+        d->qpos[1] = M_PI / 4;
 		d->qvel[2] = 1;
+    }
+    else if (testCase == 8)
+    {
+		d->qvel[0] = 0;
+		d->qvel[1] = 2;
+		d->qvel[2] = -2;
     }
 
     mj_forward(m, d);
@@ -274,7 +299,7 @@ void CleanController()
 int main(void)
 {
     // load model from file and check for errors
-    //m = mj_loadXML("humanoid.xml", NULL, error, 1000);
+    fs.open("../matlab/plot.csv", std::ios::out | std::ios::app);
     if (testCase == 0 || testCase == 1)
     {
         m = mj_loadXML("single_ball_joint.xml", NULL, error, 1000);
@@ -298,6 +323,11 @@ int main(void)
     else if (testCase == 7)
     {
         m = mj_loadXML("three_hinge_cube.xml", NULL, error, 1000);
+    }
+    else if (testCase == 8)
+    {
+       m = mj_loadXML("hinge_ball1.xml", NULL, error, 1000);
+       //m = mj_loadXML("three_hinge_cube.xml", NULL, error, 1000);
     }
 
     if (!m)
@@ -382,6 +412,6 @@ int main(void)
     mjr_freeContext(&con);
 
     mj_deleteData(d);
-
+    fs.close();
     return 0;
 }

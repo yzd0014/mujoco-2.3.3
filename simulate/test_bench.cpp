@@ -177,6 +177,14 @@ void Tick(const mjModel* m, mjData* d)
     else if (testCase == 6)
     {
        //std::cout << d->cvel[6] << " " << d->cvel[7] << " " << d->cvel[8] << std::endl;
+        if (d->time == 0 || d->time - oldTime >= m->opt.timestep - 0.0000000001)
+        {
+            mjtNum mPos[3] = { 0, 0, 0 };
+            CoordinateMju2Eae(&d->xpos[3], mPos);
+            fs << d->time << " " << mPos[0] << " " << mPos[1] << " " << mPos[2]
+                << " " << d->qpos[0] << " " << d->qpos[1] << " " << d->qpos[2] << std::endl;
+            oldTime = d->time;
+        }
     }
     else if (testCase == 8)
     {
@@ -274,15 +282,15 @@ void InitializeController(const mjModel* m, mjData* d)
     }
     else if (testCase == 6 || testCase == 7)
     {
-        d->qpos[0] = 0;
-        d->qpos[1] = M_PI / 4;
-		d->qvel[2] = 1;
+        d->qpos[0] = -M_PI / 4;
+        d->qpos[1] = 0;
+		d->qvel[2] = 2;
     }
     else if (testCase == 8)
     {
 		d->qvel[0] = 0;
 		d->qvel[1] = 2;
-		d->qvel[2] = -2;
+		d->qvel[2] = 0;
     }
 
     mj_forward(m, d);

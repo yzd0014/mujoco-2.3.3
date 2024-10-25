@@ -25,3 +25,153 @@ WARNING: Nan, Inf or huge value in QVEL at DOF 0. The simulation is unstable. Ti
 Fri Sep 20 13:41:58 2024
 WARNING: Nan, Inf or huge value in QACC at DOF 0. The simulation is unstable. Time = 90.2800.
 
+Thu Sep 26 13:59:54 2024
+WARNING: Nan, Inf or huge value in QVEL at DOF 0. The simulation is unstable. Time = 0.8400.
+
+Sun Sep 29 19:12:41 2024
+WARNING: Nan, Inf or huge value in QACC at DOF 0. The simulation is unstable. Time = 2.5050.
+
+Sun Sep 29 19:13:00 2024
+WARNING: Nan, Inf or huge value in QACC at DOF 0. The simulation is unstable. Time = 3.4290.
+
+Sun Sep 29 19:13:13 2024
+WARNING: Nan, Inf or huge value in QACC at DOF 0. The simulation is unstable. Time = 3.4290.
+
+Sun Sep 29 19:13:22 2024
+WARNING: Nan, Inf or huge value in QACC at DOF 0. The simulation is unstable. Time = 3.4290.
+
+Sun Sep 29 19:19:41 2024
+WARNING: Nan, Inf or huge value in QACC at DOF 0. The simulation is unstable. Time = 14.0030.
+
+Sun Sep 29 19:19:54 2024
+WARNING: Nan, Inf or huge value in QACC at DOF 0. The simulation is unstable. Time = 4.3900.
+
+Sun Sep 29 19:20:06 2024
+WARNING: Nan, Inf or huge value in QACC at DOF 0. The simulation is unstable. Time = 3.4290.
+
+Sun Sep 29 19:20:20 2024
+WARNING: Nan, Inf or huge value in QACC at DOF 0. The simulation is unstable. Time = 3.4290.
+
+Sun Sep 29 19:23:07 2024
+WARNING: Nan, Inf or huge value in QACC at DOF 0. The simulation is unstable. Time = 3.4290.
+
+Sun Sep 29 22:36:59 2024
+WARNING: Nan, Inf or huge value in QACC at DOF 0. The simulation is unstable. Time = 3.4290.
+
+Sun Sep 29 22:37:10 2024
+WARNING: Nan, Inf or huge value in QACC at DOF 0. The simulation is unstable. Time = 4.3900.
+
+Sun Sep 29 22:37:19 2024
+WARNING: Nan, Inf or huge value in QACC at DOF 0. The simulation is unstable. Time = 3.4290.
+
+Sun Sep 29 23:45:05 2024
+WARNING: Nan, Inf or huge value in QACC at DOF 0. The simulation is unstable. Time = 3.4290.
+
+Sun Sep 29 23:47:34 2024
+WARNING: Nan, Inf or huge value in QACC at DOF 0. The simulation is unstable. Time = 3.4290.
+
+Tue Oct  1 17:05:53 2024
+WARNING: Nan, Inf or huge value in QACC at DOF 0. The simulation is unstable. Time = 3.4290.
+
+Tue Oct  1 17:07:03 2024
+WARNING: Nan, Inf or huge value in QACC at DOF 0. The simulation is unstable. Time = 3.4290.
+
+Sat Oct  5 15:13:03 2024
+WARNING: Nan, Inf or huge value in QACC at DOF 0. The simulation is unstable. Time = 3.4290.
+
+Sat Oct  5 15:13:32 2024
+WARNING: Nan, Inf or huge value in QACC at DOF 0. The simulation is unstable. Time = 0.9658.
+
+Sat Oct  5 15:13:38 2024
+WARNING: Nan, Inf or huge value in QACC at DOF 0. The simulation is unstable. Time = 0.9658.
+
+Sat Oct  5 15:13:48 2024
+WARNING: Nan, Inf or huge value in QACC at DOF 0. The simulation is unstable. Time = 4.3900.
+
+Mon Oct  7 19:52:32 2024
+WARNING: Inertia matrix is too close to singular at DOF 0. Check model. Time = 38.4845.
+
+Mon Oct  7 19:53:27 2024
+WARNING: Inertia matrix is too close to singular at DOF 0. Check model. Time = 38.4845.
+
+Mon Oct  7 19:54:22 2024
+WARNING: Inertia matrix is too close to singular at DOF 0. Check model. Time = 38.4845.
+
+Thu Oct 17 13:17:27 2024
+WARNING: Inertia matrix is too close to singular at DOF 0. Check model. Time = 38.4845.
+
+Thu Oct 17 13:40:23 2024
+WARNING: Inertia matrix is too close to singular at DOF 0. Check model. Time = 38.4845.
+
+Sat Oct 19 22:48:42 2024
+WARNING: Nan, Inf or huge value in QACC at DOF 0. The simulation is unstable. Time = 3.4290.
+
+Sat Oct 19 22:48:54 2024
+WARNING: Nan, Inf or huge value in QACC at DOF 0. The simulation is unstable. Time = 3.4290.
+
+Sat Oct 19 22:50:25 2024
+WARNING: Nan, Inf or huge value in QACC at DOF 0. The simulation is unstable. Time = 3.0830.
+
+Sat Oct 19 22:50:51 2024
+WARNING: Nan, Inf or huge value in QACC at DOF 0. The simulation is unstable. Time = 3.0830.
+
+Sat Oct 19 22:51:12 2024
+WARNING: Nan, Inf or huge value in QACC at DOF 0. The simulation is unstable. Time = 8.0240.
+
+Sat Oct 19 22:52:03 2024
+WARNING: Nan, Inf or huge value in QACC at DOF 0. The simulation is unstable. Time = 2.5050.
+
+Sat Oct 19 22:52:09 2024
+WARNING: Nan, Inf or huge value in QACC at DOF 0. The simulation is unstable. Time = 2.5050.
+
+Sat Oct 19 22:55:26 2024
+WARNING: Nan, Inf or huge value in QACC at DOF 0. The simulation is unstable. Time = 2.5050.
+
+Sat Oct 19 23:00:10 2024
+WARNING: Nan, Inf or huge value in QACC at DOF 0. The simulation is unstable. Time = 2.5050.
+
+Sat Oct 19 23:00:57 2024
+WARNING: Nan, Inf or huge value in QACC at DOF 0. The simulation is unstable. Time = 2.5050.
+
+Sat Oct 19 23:01:41 2024
+WARNING: Nan, Inf or huge value in QACC at DOF 0. The simulation is unstable. Time = 2.5050.
+
+Sat Oct 19 23:03:03 2024
+WARNING: Nan, Inf or huge value in QACC at DOF 0. The simulation is unstable. Time = 2.5050.
+
+Sat Oct 19 23:04:05 2024
+WARNING: Nan, Inf or huge value in QACC at DOF 0. The simulation is unstable. Time = 2.5050.
+
+Sat Oct 19 23:04:15 2024
+WARNING: Nan, Inf or huge value in QACC at DOF 0. The simulation is unstable. Time = 2.5050.
+
+Sat Oct 19 23:05:15 2024
+WARNING: Nan, Inf or huge value in QACC at DOF 0. The simulation is unstable. Time = 2.5050.
+
+Wed Oct 23 21:00:10 2024
+WARNING: Inertia matrix is too close to singular at DOF 0. Check model. Time = 15.8080.
+
+Wed Oct 23 21:00:37 2024
+WARNING: Nan, Inf or huge value in QACC at DOF 0. The simulation is unstable. Time = 2.4270.
+
+Wed Oct 23 21:00:42 2024
+WARNING: Nan, Inf or huge value in QACC at DOF 0. The simulation is unstable. Time = 2.4270.
+
+Wed Oct 23 21:46:00 2024
+WARNING: Inertia matrix is too close to singular at DOF 0. Check model. Time = 7.7790.
+
+Wed Oct 23 21:46:36 2024
+WARNING: Inertia matrix is too close to singular at DOF 0. Check model. Time = 7.7790.
+
+Wed Oct 23 21:56:54 2024
+WARNING: Nan, Inf or huge value in QACC at DOF 0. The simulation is unstable. Time = 3.7200.
+
+Wed Oct 23 21:57:03 2024
+WARNING: Nan, Inf or huge value in QACC at DOF 0. The simulation is unstable. Time = 3.7200.
+
+Wed Oct 23 22:07:32 2024
+WARNING: Inertia matrix is too close to singular at DOF 0. Check model. Time = 7.7790.
+
+Wed Oct 23 22:07:46 2024
+WARNING: Inertia matrix is too close to singular at DOF 0. Check model. Time = 7.7790.
+

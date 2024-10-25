@@ -20,11 +20,11 @@
 #include "array_safety.h"
 
 std::fstream fs;
-int testCase = 8;
+int testCase = 9;
 double oldTime = 0;
 
-//#include <Eigen/Eigen>
-//using namespace Eigen;
+#include <Eigen/Eigen>
+using namespace Eigen;
 
 char error[1000];
 int mode = 4;
@@ -174,28 +174,56 @@ void Tick(const mjModel* m, mjData* d)
 
         //std::cout << d->qvel[0] << " " << d->qvel[1] << " " << d->qvel[2] << std::endl;
     }
-    else if (testCase == 6)
+    //else if (testCase == 6)
+    //{
+    //   //std::cout << d->cvel[6] << " " << d->cvel[7] << " " << d->cvel[8] << std::endl;
+    //    if (d->time == 0 || d->time - oldTime >= m->opt.timestep - 0.0000000001)
+    //    {
+    //        mjtNum mPos[3] = { 0, 0, 0 };
+    //        CoordinateMju2Eae(&d->xpos[3], mPos);
+    //        fs << d->time << " " << mPos[0] << " " << mPos[1] << " " << mPos[2]
+    //            << " " << d->qpos[0] << " " << d->qpos[1] << " " << d->qpos[2] << std::endl;
+    //        oldTime = d->time;
+    //    }
+    //}
+    else if (testCase == 6 || testCase == 8)
     {
-       //std::cout << d->cvel[6] << " " << d->cvel[7] << " " << d->cvel[8] << std::endl;
-        if (d->time == 0 || d->time - oldTime >= m->opt.timestep - 0.0000000001)
+        mjtNum dst[9];
+        Matrix3d inertia = Matrix3d::Zero();
+        mj_fullM(m, dst, d->qM);
+
+        for (int i = 0; i < 3; i++)
         {
-            mjtNum mPos[3] = { 0, 0, 0 };
-            CoordinateMju2Eae(&d->xpos[3], mPos);
-            fs << d->time << " " << mPos[0] << " " << mPos[1] << " " << mPos[2]
-                << " " << d->qpos[0] << " " << d->qpos[1] << " " << d->qpos[2] << std::endl;
-            oldTime = d->time;
+            for (int j = 0; j < 3; j++)
+            {
+                inertia(i, j) = dst[i * 3 + j];
+            }
         }
-    }
-    else if (testCase == 8)
-    {
-        if (d->time == 0 || d->time - oldTime >= m->opt.timestep - 0.0000000001)
+        mjtNum det = inertia.determinant();
+		bool smallInertia = false;
+        if (det < 1e-15 || d->qacc[2] > 1000000)
         {
-            mjtNum mPos[3] = { 0, 0, 0 };
-            CoordinateMju2Eae(&d->xpos[3], mPos);
-            fs << d->time << " " << mPos[0] << " " << mPos[1] << " " << mPos[2]
-                << " " << d->qpos[0] << " " << d->qpos[1] << " " << d->qpos[2] << std::endl;
-			oldTime = d->time;
-        } 
+			smallInertia = true;
+            std::cout << "det: " << det << std::endl;
+        }
+
+        if (d->time <= 5 && !smallInertia)
+        {
+            if (d->time == 0 || d->time - oldTime >= m->opt.timestep - 0.0000000001)
+            {
+                mjtNum mPos[3] = { 0, 0, 0 };
+                CoordinateMju2Eae(&d->xpos[3], mPos);
+                fs << d->time << " " << mPos[0] << " " << mPos[1] << " " << mPos[2]
+                    << " " << d->qpos[0] << " " << d->qpos[1] << " " << d->qpos[2] << std::endl;
+                oldTime = d->time;
+            } 
+        }
+        else
+        {
+			start_sim = false;
+        }
+		
+      
     }
 }
 
@@ -282,15 +310,25 @@ void InitializeController(const mjModel* m, mjData* d)
     }
     else if (testCase == 6 || testCase == 7)
     {
-        d->qpos[0] = -M_PI / 4;
-        d->qpos[1] = 0;
+        d->qpos[0] = 0;
+        d->qpos[1] = M_PI / 4;
 		d->qvel[2] = 2;
     }
     else if (testCase == 8)
     {
 		d->qvel[0] = 0;
 		d->qvel[1] = 2;
-		d->qvel[2] = 0;
+		d->qvel[2] = -2;
+
+       /* d->qvel[0] = 2;
+        d->qvel[1] = 2;
+        d->qvel[2] = 0;*/
+    }
+    else if (testCase == 9)
+    {
+        d->qpos[1] = M_PI / 4;
+        d->qvel[0] = -1.4142;
+		d->qvel[2] = 1.4142;
     }
 
     mj_forward(m, d);
@@ -337,6 +375,10 @@ int main(void)
        m = mj_loadXML("hinge_ball1.xml", NULL, error, 1000);
        //m = mj_loadXML("three_hinge_cube.xml", NULL, error, 1000);
     }
+    else if (testCase == 9)
+    {
+        m = mj_loadXML("swing90.xml", NULL, error, 1000);
+    }
 
     if (!m)
     {
@@ -373,7 +415,7 @@ int main(void)
     glfwSetMouseButtonCallback(window, mouse_button);
     glfwSetScrollCallback(window, scroll);
 
-    double arr_view[] = { 90, -20, 10, 0, 0.000000, 1 };
+    double arr_view[] = { 90, -30, 7, 0, 0.000000, 0 };
     cam.azimuth = arr_view[0];
     cam.elevation = arr_view[1];
     cam.distance = arr_view[2];

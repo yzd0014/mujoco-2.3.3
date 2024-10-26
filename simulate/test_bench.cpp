@@ -20,7 +20,7 @@
 #include "array_safety.h"
 
 std::fstream fs;
-int testCase = 9;
+int testCase = 8;
 double oldTime = 0;
 
 #include <Eigen/Eigen>
@@ -316,13 +316,13 @@ void InitializeController(const mjModel* m, mjData* d)
     }
     else if (testCase == 8)
     {
-		d->qvel[0] = 0;
+		/*d->qvel[0] = 0;
 		d->qvel[1] = 2;
-		d->qvel[2] = -2;
+		d->qvel[2] = -2;*/
 
-       /* d->qvel[0] = 2;
+        d->qvel[0] = 2;
         d->qvel[1] = 2;
-        d->qvel[2] = 0;*/
+        d->qvel[2] = 0;
     }
     else if (testCase == 9)
     {

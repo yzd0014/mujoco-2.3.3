@@ -2,12 +2,16 @@ import mujoco as mj
 from mujoco.glfw import glfw
 import numpy as np
 import os
+from PIL import Image
 
-xml_path = '../model/hello.xml' #xml file (assumes this is in the same folder as this file)
-simend = 5 #simulation time
-print_camera_config = 0 #set to 1 to print camera config
-                        #this is useful for initializing view of the model)
+OFF_SCREEN = 0
+ON_SCREEN = 1
+render_mode = OFF_SCREEN
+test_case = 0
 
+xml_path = '../model/hinge_ball1.xml' #xml file (assumes this is in the same folder as this file)
+sim_pause = True
+next_frame = False
 # For callback functions
 button_left = False
 button_middle = False
@@ -16,8 +20,14 @@ lastx = 0
 lasty = 0
 
 def init_controller(model,data):
+    if test_case == 0:
+        data.qvel[0] = 2
+        data.qvel[1] = 2
+        data.qvel[2] = 0
+        #initialize the controller here. This function is called once, in the beginning
+        mj.mj_forward(model, data)
     #initialize the controller here. This function is called once, in the beginning
-    pass
+    mj.mj_forward(model, data)
 
 def controller(model, data):
     #put the controller here. This function is called inside the simulation.
@@ -27,6 +37,12 @@ def keyboard(window, key, scancode, act, mods):
     if act == glfw.PRESS and key == glfw.KEY_BACKSPACE:
         mj.mj_resetData(model, data)
         mj.mj_forward(model, data)
+    if act == glfw.PRESS and key == glfw.KEY_SPACE:
+        global sim_pause
+        sim_pause = not sim_pause
+    if act == glfw.PRESS and key == glfw.KEY_RIGHT:
+        global next_frame
+        next_frame = True
 
 def mouse_button(window, button, act, mods):
     # update button state
@@ -123,10 +139,10 @@ glfw.set_mouse_button_callback(window, mouse_button)
 glfw.set_scroll_callback(window, scroll)
 
 # Example on how to set camera configuration
-# cam.azimuth = 90
-# cam.elevation = -45
-# cam.distance = 2
-# cam.lookat = np.array([0.0, 0.0, 0])
+cam.azimuth = 90
+cam.elevation = -30
+cam.distance = 7
+cam.lookat = np.array([0.0, 0.0, 0])
 
 #initialize the controller
 init_controller(model,data)
@@ -134,34 +150,56 @@ init_controller(model,data)
 #set the controller
 mj.set_mjcb_control(controller)
 
-while not glfw.window_should_close(window):
-    time_prev = data.time
 
-    while (data.time - time_prev < 1.0/60.0):
-        mj.mj_step(model, data)
+if render_mode == OFF_SCREEN:
+    total_time = 3.4
+    h = model.opt.timestep
+    total_frames = int(total_time / h)
 
-    # if (data.time>=simend):
-    #     break;
+    renderer = mj.Renderer(model, width=1024, height=1024)
+    num_frames = 20  # Set this to the desired number of frames
 
-    # get framebuffer viewport
-    viewport_width, viewport_height = glfw.get_framebuffer_size(
-        window)
-    viewport = mj.MjrRect(0, 0, viewport_width, viewport_height)
+    frames_to_skip = total_frames // num_frames
+    for frame in range(num_frames):
+        # Render the current frame to an off-screen buffer
+        renderer.update_scene(data)
+        img = renderer.render()
 
-    #print camera configuration (help to initialize the view)
-    if (print_camera_config==1):
-        print('cam.azimuth =',cam.azimuth,';','cam.elevation =',cam.elevation,';','cam.distance = ',cam.distance)
-        print('cam.lookat =np.array([',cam.lookat[0],',',cam.lookat[1],',',cam.lookat[2],'])')
+        # Convert to image format and save as PNG or JPG
+        img = Image.fromarray(img)  # Flip image vertically if needed
+        img.save(f"frames/frame_{frame:04d}.jpg", quality=95)  # Save as frame_0000.jpg, frame_0001.jpg, ...
 
-    # Update scene and render
-    mj.mjv_updateScene(model, data, opt, None, cam,
-                       mj.mjtCatBit.mjCAT_ALL.value, scene)
-    mj.mjr_render(viewport, scene, context)
+        for _ in range(frames_to_skip):
+            mj.mj_step(model, data)  # Advance the simulation
 
-    # swap OpenGL buffers (blocking call due to v-sync)
-    glfw.swap_buffers(window)
+    # Clean up
+    print("Done!")
 
-    # process pending GUI events, call GLFW callbacks
-    glfw.poll_events()
+elif render_mode == ON_SCREEN:
+    while not glfw.window_should_close(window):
+        time_prev = data.time
 
-glfw.terminate()
+        if sim_pause == False or next_frame == True:
+            time_prev = data.time
+            while (data.time - time_prev < 1.0 / 60.0):
+                mj.mj_step(model, data)
+            next_frame = False
+            print(f"sim time: {data.time}")
+
+        # get framebuffer viewport
+        viewport_width, viewport_height = glfw.get_framebuffer_size(
+            window)
+        viewport = mj.MjrRect(0, 0, viewport_width, viewport_height)
+
+        # Update scene and render
+        mj.mjv_updateScene(model, data, opt, None, cam,
+                           mj.mjtCatBit.mjCAT_ALL.value, scene)
+        mj.mjr_render(viewport, scene, context)
+
+        # swap OpenGL buffers (blocking call due to v-sync)
+        glfw.swap_buffers(window)
+
+        # process pending GUI events, call GLFW callbacks
+        glfw.poll_events()
+
+    glfw.terminate()

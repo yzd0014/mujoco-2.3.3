@@ -207,7 +207,7 @@ void Tick(const mjModel* m, mjData* d)
             std::cout << "det: " << det << std::endl;
         }
 
-        if (d->time <= 5 && !smallInertia)
+        if (d->time <= 10 && !smallInertia)
         {
             if (d->time == 0 || d->time - oldTime >= m->opt.timestep - 0.0000000001)
             {

@@ -150,16 +150,18 @@ init_controller(model,data)
 #set the controller
 mj.set_mjcb_control(controller)
 
-
 if render_mode == OFF_SCREEN:
     total_time = 3.4
     h = model.opt.timestep
     total_frames = int(total_time / h)
 
     renderer = mj.Renderer(model, width=1024, height=1024)
-    num_frames = 20  # Set this to the desired number of frames
+    num_frames = 3  # Set this to the desired number of frames
 
-    frames_to_skip = total_frames // num_frames
+    if num_frames == 3:
+        frames_to_skip = int(total_frames / 2)
+    else:
+        frames_to_skip = total_frames // num_frames
     for frame in range(num_frames):
         # Render the current frame to an off-screen buffer
         renderer.update_scene(data)
@@ -167,7 +169,7 @@ if render_mode == OFF_SCREEN:
 
         # Convert to image format and save as PNG or JPG
         img = Image.fromarray(img)  # Flip image vertically if needed
-        img.save(f"frames/frame_{frame:04d}.jpg", quality=95)  # Save as frame_0000.jpg, frame_0001.jpg, ...
+        img.save(f"frames/body_{frame:04d}.jpg", quality=95)  # Save as frame_0000.jpg, frame_0001.jpg, ...
 
         for _ in range(frames_to_skip):
             mj.mj_step(model, data)  # Advance the simulation

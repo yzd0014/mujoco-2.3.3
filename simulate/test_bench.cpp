@@ -20,7 +20,7 @@
 #include "array_safety.h"
 
 std::fstream fs;
-int testCase = 8;
+int testCase = 9;
 double oldTime = 0;
 
 #include <Eigen/Eigen>
@@ -186,7 +186,7 @@ void Tick(const mjModel* m, mjData* d)
     //        oldTime = d->time;
     //    }
     //}
-    else if (testCase == 6 || testCase == 8)
+    else if (testCase == 6 || testCase == 8 || testCase == 9)
     {
         mjtNum dst[9];
         Matrix3d inertia = Matrix3d::Zero();
@@ -201,15 +201,16 @@ void Tick(const mjModel* m, mjData* d)
         }
         mjtNum det = inertia.determinant();
 		bool smallInertia = false;
-        if (det < 1e-15 || d->qacc[2] > 1000000)
+        if (det < 1e-7 || d->qacc[2] > 1000000)
         {
 			smallInertia = true;
             std::cout << "det: " << det << std::endl;
         }
 
-        if (d->time <= 10 && !smallInertia)
+        if (d->time <= 8 + 0.0000000001)
         {
-            if (d->time == 0 || d->time - oldTime >= m->opt.timestep - 0.0000000001)
+            mjtNum h = 0.001;
+            if (d->time == 0 || d->time - oldTime >= h - 0.0000000001)
             {
                 mjtNum mPos[3] = { 0, 0, 0 };
                 CoordinateMju2Eae(&d->xpos[3], mPos);
@@ -222,8 +223,6 @@ void Tick(const mjModel* m, mjData* d)
         {
 			start_sim = false;
         }
-		
-      
     }
 }
 
@@ -310,25 +309,25 @@ void InitializeController(const mjModel* m, mjData* d)
     }
     else if (testCase == 6 || testCase == 7)
     {
-        d->qpos[0] = 0;
-        d->qpos[1] = M_PI / 4;
+        d->qpos[0] = -M_PI / 4;
+        d->qpos[1] = 0;
 		d->qvel[2] = 2;
     }
     else if (testCase == 8)
     {
-		/*d->qvel[0] = 0;
+		d->qvel[0] = 0;
 		d->qvel[1] = 2;
-		d->qvel[2] = -2;*/
+		d->qvel[2] = -2;
 
-        d->qvel[0] = 2;
+       /* d->qvel[0] = 2;
         d->qvel[1] = 2;
-        d->qvel[2] = 0;
+        d->qvel[2] = 0;*/
     }
     else if (testCase == 9)
     {
         d->qpos[1] = M_PI / 4;
-        d->qvel[0] = -1.4142;
-		d->qvel[2] = 1.4142;
+        d->qvel[0] = -2.8284;
+		d->qvel[2] = 2;
     }
 
     mj_forward(m, d);

@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 
 # List of frames to overlay in order
-frame_num = 40
+frame_num = 30
 frames = [cv2.imread(f"frames/frame_{frame:04d}.jpg") for frame in range(0, frame_num)]
 
 # Initialize base image with the first frame

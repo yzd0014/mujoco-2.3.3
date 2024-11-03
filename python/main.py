@@ -7,9 +7,12 @@ from PIL import Image
 OFF_SCREEN = 0
 ON_SCREEN = 1
 render_mode = OFF_SCREEN
-test_case = 0
+test_case = 4
 
-xml_path = '../model/hinge_ball1.xml' #xml file (assumes this is in the same folder as this file)
+if test_case == 4:
+    xml_path = '../model/swing90.xml'
+else:
+    xml_path = '../model/hinge_ball1.xml' #xml file (assumes this is in the same folder as this file)
 sim_pause = True
 next_frame = False
 # For callback functions
@@ -27,6 +30,24 @@ def init_controller(model,data):
         #initialize the controller here. This function is called once, in the beginning
         mj.mj_forward(model, data)
     #initialize the controller here. This function is called once, in the beginning
+    elif test_case == 1:
+        data.qvel[0] = 0;
+        data.qvel[1] = 2;
+        data.qvel[2] = -2;
+
+    elif test_case == 2:
+        data.qpos[0] = -np.pi / 4;
+        data.qpos[1] = 0;
+        data.qvel[2] = 2;
+
+    elif test_case == 3:
+        data.qpos[0] = 0;
+        data.qpos[1] = np.pi / 4;
+        data.qvel[2] = 2;
+    elif test_case == 4:
+        data.qpos[1] = np.pi / 4;
+        data.qvel[0] = -2.8284;
+        data.qvel[2] = 2;
     mj.mj_forward(model, data)
 
 def controller(model, data):
@@ -151,7 +172,7 @@ init_controller(model,data)
 mj.set_mjcb_control(controller)
 
 if render_mode == OFF_SCREEN:
-    total_time = 3.4
+    total_time = 5.7
     h = model.opt.timestep
     total_frames = int(total_time / h)
 
@@ -169,7 +190,10 @@ if render_mode == OFF_SCREEN:
 
         # Convert to image format and save as PNG or JPG
         img = Image.fromarray(img)  # Flip image vertically if needed
-        img.save(f"frames/body_{frame:04d}.jpg", quality=95)  # Save as frame_0000.jpg, frame_0001.jpg, ...
+        if num_frames == 3:
+            img.save(f"frames/body_{frame:04d}.jpg", quality=95)  # Save as frame_0000.jpg, frame_0001.jpg, ...
+        else:
+            img.save(f"frames/frame_{frame:04d}.jpg", quality=95)
 
         for _ in range(frames_to_skip):
             mj.mj_step(model, data)  # Advance the simulation

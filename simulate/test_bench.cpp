@@ -20,7 +20,7 @@
 #include "array_safety.h"
 
 std::fstream fs;
-int testCase = 9;
+int testCase = 8;
 double oldTime = 0;
 
 #include <Eigen/Eigen>
@@ -70,6 +70,31 @@ void CoordinateMju2Eae(mjtNum* i_v, mjtNum* o_v)
 	o_v[2] = -i_v[1];
 }
 
+Quaterniond ComputeRotOffset()
+{
+    Matrix3d rotOffsetM;
+	rotOffsetM.setIdentity();
+	rotOffsetM.block<3, 1>(0, 0) = Vector3d(0, 0, -1);
+	rotOffsetM.block<3, 1>(0, 1) = Vector3d(0, -1, 0);
+	rotOffsetM.block<3, 1>(0, 2) = Vector3d(-1, 0, 0);
+	Quaterniond rotOffset(rotOffsetM.transpose());
+	return rotOffset;
+}
+
+void QuatToEuler(mjtNum i_quat[4], mjtNum o_Euler[3])
+{
+    Quaterniond rotOffset = ComputeRotOffset();
+    Quaterniond q(i_quat[0], i_quat[1], i_quat[2], i_quat[3]);
+	Quaterniond qEffective = rotOffset * q * rotOffset.inverse();
+    mjtNum r11 = -2 * (qEffective.x() * qEffective.z() - q.w() * qEffective.y());
+    mjtNum r12 = qEffective.w() * qEffective.w() + qEffective.x() * qEffective.x() - qEffective.y() * qEffective.y() - qEffective.z() * qEffective.z();
+	mjtNum r21 = 2 * (qEffective.x() * qEffective.y() + qEffective.w() * qEffective.z());
+	mjtNum r31 = -2 * (qEffective.y() * qEffective.z() - qEffective.w() * qEffective.x());
+	mjtNum r32 = qEffective.w() * qEffective.w() - qEffective.x() * qEffective.x() + qEffective.y() * qEffective.y() - qEffective.z() * qEffective.z();
+	o_Euler[0] = atan2(r31, r32);
+	o_Euler[1] = asin(r21);
+	o_Euler[2] = atan2(r11, r12);
+}
 // keyboard callback
 void keyboard(GLFWwindow* window, int key, int scancode, int act, int mods)
 {
@@ -212,10 +237,16 @@ void Tick(const mjModel* m, mjData* d)
             mjtNum h = 0.001;
             if (d->time == 0 || d->time - oldTime >= h - 0.0000000001)
             {
-                mjtNum mPos[3] = { 0, 0, 0 };
+               /* mjtNum mPos[3] = { 0, 0, 0 };
                 CoordinateMju2Eae(&d->xpos[3], mPos);
                 fs << d->time << " " << mPos[0] << " " << mPos[1] << " " << mPos[2]
-                    << " " << d->qpos[0] << " " << d->qpos[1] << " " << d->qpos[2] << std::endl;
+                    << " " << d->qpos[0] << " " << d->qpos[1] << " " << d->qpos[2] << std::endl;*/
+
+				mjtNum euler[3];
+				QuatToEuler(&d->xquat[4], euler);
+                std::cout << "alpha " << d->qpos[0] << " m_alpha " << euler[2] << std::endl;
+                std::cout << "beta " << d->qpos[1] << " m_beta " << euler[1] << std::endl;
+				std::cout << "gamma " << d->qpos[2] << " m_gamma " << euler[0] << std::endl << std::endl;
                 oldTime = d->time;
             } 
         }
@@ -315,13 +346,13 @@ void InitializeController(const mjModel* m, mjData* d)
     }
     else if (testCase == 8)
     {
-		d->qvel[0] = 0;
+		/*d->qvel[0] = 0;
 		d->qvel[1] = 2;
-		d->qvel[2] = -2;
+		d->qvel[2] = -2;*/
 
-       /* d->qvel[0] = 2;
+        d->qvel[0] = 2;
         d->qvel[1] = 2;
-        d->qvel[2] = 0;*/
+        d->qvel[2] = 0;
     }
     else if (testCase == 9)
     {

@@ -6,7 +6,7 @@ from PIL import Image
 
 OFF_SCREEN = 0
 ON_SCREEN = 1
-render_mode = OFF_SCREEN
+render_mode = ON_SCREEN
 test_case = 4
 
 if test_case == 4:
@@ -191,9 +191,9 @@ if render_mode == OFF_SCREEN:
         # Convert to image format and save as PNG or JPG
         img = Image.fromarray(img)  # Flip image vertically if needed
         if num_frames == 3:
-            img.save(f"frames/body_{frame:04d}.jpg", quality=95)  # Save as frame_0000.jpg, frame_0001.jpg, ...
+            img.save(f"frames/body_{frame:04d}.png", format='PNG', quality=95)  # Save as frame_0000.jpg, frame_0001.jpg, ...
         else:
-            img.save(f"frames/frame_{frame:04d}.jpg", quality=95)
+            img.save(f"frames/frame_{frame:04d}.png", format='PNG', quality=95)
 
         for _ in range(frames_to_skip):
             mj.mj_step(model, data)  # Advance the simulation

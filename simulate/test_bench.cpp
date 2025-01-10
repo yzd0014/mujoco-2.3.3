@@ -20,7 +20,7 @@
 #include "array_safety.h"
 
 std::fstream fs;
-int testCase = 8;
+int testCase = -1;
 double oldTime = 0;
 
 #include <Eigen/Eigen>
@@ -183,77 +183,46 @@ void scroll(GLFWwindow* window, double xoffset, double yoffset)
 
 void Tick(const mjModel* m, mjData* d)
 {
-    if (testCase == 0 || testCase == 1)
+    mjtNum dst[9];
+    Matrix3d inertia = Matrix3d::Zero();
+    mj_fullM(m, dst, d->qM);
+
+    for (int i = 0; i < 3; i++)
     {
-        mjtNum vel[3];
-        mju_quat2Vel(vel, d->qpos, 1);
-        mjtNum vel_norm = mju_norm3(vel);
-        //std::cout << "rot_norm: " << vel_norm << std::endl;
-
-       /* std::cout << m->body_inertia[3] << " " << m->body_inertia[4] << " " << m->body_inertia[5] << std::endl;
-		std::cout << m->body_mass[1] << std::endl;*/
-        mjtNum i_quat[3] = { d->qpos[1], d->qpos[2],  d->qpos[3] };
-        mjtNum o_quat[3];
-        CoordinateEae2Mju(i_quat, o_quat);
-        //std::cout << d->qpos[0] << " " << o_quat[0] << " " << o_quat[1] << " " << o_quat[2] << std::endl;
-
-        //std::cout << d->qvel[0] << " " << d->qvel[1] << " " << d->qvel[2] << std::endl;
+        for (int j = 0; j < 3; j++)
+        {
+            inertia(i, j) = dst[i * 3 + j];
+        }
     }
-    //else if (testCase == 6)
-    //{
-    //   //std::cout << d->cvel[6] << " " << d->cvel[7] << " " << d->cvel[8] << std::endl;
-    //    if (d->time == 0 || d->time - oldTime >= m->opt.timestep - 0.0000000001)
-    //    {
-    //        mjtNum mPos[3] = { 0, 0, 0 };
-    //        CoordinateMju2Eae(&d->xpos[3], mPos);
-    //        fs << d->time << " " << mPos[0] << " " << mPos[1] << " " << mPos[2]
-    //            << " " << d->qpos[0] << " " << d->qpos[1] << " " << d->qpos[2] << std::endl;
-    //        oldTime = d->time;
-    //    }
-    //}
-    else if (testCase == 6 || testCase == 8 || testCase == 9)
+    mjtNum det = inertia.determinant();
+    bool smallInertia = false;
+    if (det < 1e-7 || d->qacc[2] > 1000000)
     {
-        mjtNum dst[9];
-        Matrix3d inertia = Matrix3d::Zero();
-        mj_fullM(m, dst, d->qM);
+        smallInertia = true;
+        std::cout << "det: " << det << std::endl;
+    }
 
-        for (int i = 0; i < 3; i++)
+    if (d->time <= 8 + 0.0000000001)
+    {
+        mjtNum h = 0.001;
+        if (d->time == 0 || d->time - oldTime >= h - 0.0000000001)
         {
-            for (int j = 0; j < 3; j++)
-            {
-                inertia(i, j) = dst[i * 3 + j];
-            }
-        }
-        mjtNum det = inertia.determinant();
-		bool smallInertia = false;
-        if (det < 1e-7 || d->qacc[2] > 1000000)
-        {
-			smallInertia = true;
-            std::cout << "det: " << det << std::endl;
-        }
+            /* mjtNum mPos[3] = { 0, 0, 0 };
+             CoordinateMju2Eae(&d->xpos[3], mPos);
+             fs << d->time << " " << mPos[0] << " " << mPos[1] << " " << mPos[2]
+                 << " " << d->qpos[0] << " " << d->qpos[1] << " " << d->qpos[2] << std::endl;*/
 
-        if (d->time <= 8 + 0.0000000001)
-        {
-            mjtNum h = 0.001;
-            if (d->time == 0 || d->time - oldTime >= h - 0.0000000001)
-            {
-               /* mjtNum mPos[3] = { 0, 0, 0 };
-                CoordinateMju2Eae(&d->xpos[3], mPos);
-                fs << d->time << " " << mPos[0] << " " << mPos[1] << " " << mPos[2]
-                    << " " << d->qpos[0] << " " << d->qpos[1] << " " << d->qpos[2] << std::endl;*/
-
-				mjtNum euler[3];
-				QuatToEuler(&d->xquat[4], euler);
-                std::cout << "alpha " << d->qpos[0] << " m_alpha " << euler[2] << std::endl;
-                std::cout << "beta " << d->qpos[1] << " m_beta " << euler[1] << std::endl;
-				std::cout << "gamma " << d->qpos[2] << " m_gamma " << euler[0] << std::endl << std::endl;
-                oldTime = d->time;
-            } 
+                 /*	mjtNum euler[3];
+                     QuatToEuler(&d->xquat[4], euler);
+                     std::cout << "alpha " << d->qpos[0] << " m_alpha " << euler[2] << std::endl;
+                     std::cout << "beta " << d->qpos[1] << " m_beta " << euler[1] << std::endl;
+                     std::cout << "gamma " << d->qpos[2] << " m_gamma " << euler[0] << std::endl << std::endl;*/
+            oldTime = d->time;
         }
-        else
-        {
-			start_sim = false;
-        }
+    }
+    else
+    {
+        start_sim = false;
     }
 }
 
@@ -261,104 +230,31 @@ void InitializeController(const mjModel* m, mjData* d)
 {
     if (testCase == 0)
     {
-        d->qvel[0] = 0;
-        d->qvel[1] = 0;
+        d->qpos[1] = M_PI / 4;
         d->qvel[2] = 2;
     }
-	else if (testCase == 1)//single ball joint invarience to rotation
-    {
-        mjtNum rotQuat[4];
-        mjtNum targetVec[3] = { 0, 1, 1 };
-        //mjtNum targetVec[3] = { 0, 0, 1 };
-        mju_quatZ2Vec(rotQuat, targetVec);
-        mjtNum rotMat[9];
-        mju_quat2Mat(rotMat, rotQuat);
-   
-        mjtNum localW[3] = { 0, 0, 1 };
-        mjtNum globalW[3];
-        mju_rotVecMat(globalW, localW, rotMat);
-        //std::cout << globalW[0] << " " << globalW[1] << " " << globalW[2] << std::endl;
-
-        for (int i = 0; i < 4; i++) d->qpos[i] = rotQuat[i];
-        for (int i = 0; i < 3; i++) d->qvel[i] = localW[i];
-    }
-	else if (testCase == 2)//lock chain
-    {
-        mjtNum targetVec[3] = { -1, 0, 1 };
-        mjtNum rotQuat[4];
-        mju_quatZ2Vec(rotQuat, targetVec);
-		mjtNum rotMat[9];
-		mju_quat2Mat(rotMat, rotQuat);
-		mjtNum localW[3] = { 0.2, 0, 0 };
-		mjtNum globalW[3];
-		mju_rotVecMat(globalW, localW, rotMat);
-      
-        d->qvel[8] = globalW[0];
-		d->qvel[9] = globalW[1];
-		d->qvel[10] = globalW[2];
-        //d->qvel[8] = 1;
-    }
-    else if (testCase == 3) //lock chain mimic
-    {
-        mjtNum rotQuat[4];
-        mjtNum targetVec[3] = { -1, 0, 1 };
-        mju_quatZ2Vec(rotQuat, targetVec);
-		d->qpos[4] = rotQuat[0];
-		d->qpos[5] = rotQuat[1];
-		d->qpos[6] = rotQuat[2];
-		d->qpos[7] = rotQuat[3];
-        
-        mjtNum localW[3] = { 0, 0, -0.5 };
-        d->qvel[3] = localW[0];
-        d->qvel[4] = localW[1];
-        d->qvel[5] = localW[2];
-    }
-	else if (testCase == 4) //twist invarience for two ball joints
-    {
-        mjtNum rotQuat[4];
-        mjtNum targetVec[3] = { 0, 1, 1 };
-        mju_quatZ2Vec(rotQuat, targetVec);
-        d->qpos[0] = rotQuat[0];
-        d->qpos[1] = rotQuat[1];
-        d->qpos[2] = rotQuat[2];
-        d->qpos[3] = rotQuat[3];
-
-        mjtNum localW[3] = { 0, 0, 1 };
-        d->qvel[3] = localW[0];
-        d->qvel[4] = localW[1];
-        d->qvel[5] = localW[2];
-    }
-    else if (testCase == 5)
-    {
-        mjtNum rotQuat[4];
-        mjtNum targetVec[3] = { 1, 0, 0 };
-		mju_axisAngle2Quat(rotQuat, targetVec, M_PI/8);
-        d->qpos[4] = rotQuat[0];
-        d->qpos[5] = rotQuat[1];
-        d->qpos[6] = rotQuat[2];
-        d->qpos[7] = rotQuat[3];
-    }
-    else if (testCase == 6 || testCase == 7)
+	else if (testCase == 1)
     {
         d->qpos[0] = -M_PI / 4;
-        d->qpos[1] = 0;
-		d->qvel[2] = 2;
+        d->qvel[2] = 2;
     }
-    else if (testCase == 8)
+	else if (testCase == 2)
     {
-		/*d->qvel[0] = 0;
-		d->qvel[1] = 2;
-		d->qvel[2] = -2;*/
-
         d->qvel[0] = 2;
         d->qvel[1] = 2;
         d->qvel[2] = 0;
     }
-    else if (testCase == 9)
+    else if (testCase == 3) //lock chain mimic
+    {
+        d->qvel[0] = 0;
+        d->qvel[1] = 2;
+        d->qvel[2] = -2;
+    }
+	else if (testCase == 4) //twist invarience for two ball joints
     {
         d->qpos[1] = M_PI / 4;
         d->qvel[0] = -2.8284;
-		d->qvel[2] = 2;
+        d->qvel[2] = 2;
     }
 
     mj_forward(m, d);
@@ -372,42 +268,37 @@ void CleanController()
     delete CharaterControl::jointTorque;
 }
 
-int main(void)
+int main(int argc, char* argv[])
 {
     // load model from file and check for errors
     fs.open("../matlab/plot.csv", std::ios::out | std::ios::app);
-    if (testCase == 0 || testCase == 1)
+    for (int i = 1; i < argc; i++)
     {
-        m = mj_loadXML("single_ball_joint.xml", NULL, error, 1000);
+        std::string arg = argv[i];
+        if (arg == "-example" && i + 1 < argc)
+        {
+			testCase = std::stoi(argv[i + 1]);
+        }
+    }
+    if (testCase == 0)
+    {
+        m = mj_loadXML("example0.xml", NULL, error, 1000);
+    }
+    else if (testCase == 1)
+    {
+        m = mj_loadXML("example1.xml", NULL, error, 1000);
     }
     else if (testCase == 2)
     {
-        m = mj_loadXML("lock_chain.xml", NULL, error, 1000);
+        m = mj_loadXML("example2.xml", NULL, error, 1000);
     }
-    else if (testCase == 3 || testCase == 4)
+    else if (testCase == 3)
     {
-        m = mj_loadXML("double_ball_joint.xml", NULL, error, 1000);
+        m = mj_loadXML("example3.xml", NULL, error, 1000);
     }
-    else if (testCase == 5)
+    else if (testCase == 4)
     {
-        m = mj_loadXML("multi_ball_joint.xml", NULL, error, 1000);
-    }
-    else if (testCase == 6)
-    {
-        m = mj_loadXML("hinge_ball1.xml", NULL, error, 1000);
-    }
-    else if (testCase == 7)
-    {
-        m = mj_loadXML("three_hinge_cube.xml", NULL, error, 1000);
-    }
-    else if (testCase == 8)
-    {
-       m = mj_loadXML("hinge_ball1.xml", NULL, error, 1000);
-       //m = mj_loadXML("three_hinge_cube.xml", NULL, error, 1000);
-    }
-    else if (testCase == 9)
-    {
-        m = mj_loadXML("swing90.xml", NULL, error, 1000);
+        m = mj_loadXML("example4.xml", NULL, error, 1000);
     }
 
     if (!m)

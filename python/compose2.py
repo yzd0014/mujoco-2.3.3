@@ -42,7 +42,7 @@ def create_trailing_effect(image_sequence):
     # Apply the trailing effect by stacking images with reduced opacity
     for i, img in enumerate(image_sequence):
         # Convert black to transparent in each frame
-        img = convert_black_to_transparent(img)
+        img = convert_black_to_transparent2(img)
         # Apply the trail effect by blending with decreasing opacity
         base = Image.alpha_composite(base, img)
 
@@ -50,17 +50,17 @@ def create_trailing_effect(image_sequence):
 
 
 # Load your sequence of images
-image_sequence = [Image.open(f"frames/frame_{i:04d}.png") for i in range(0, 20)]  # Adjust filenames as needed
+image_sequence = [Image.open(f"frames/box.{i:04d}.png") for i in range(1, 19)]  # Adjust filenames as needed
 
 # Create the trailing effect
 final_image = create_trailing_effect(image_sequence)
 
-image_sequence2 = [Image.open(f"frames/body_{i:04d}.png") for i in range(0, 3)]  # Adjust filenames as needed
-for i, img in enumerate(image_sequence2):
-    # Convert black to transparent in each frame
-    img = convert_black_to_transparent2(img)
-    # Apply the trail effect by blending with decreasing opacity
-    final_image = Image.alpha_composite(final_image, img)
+# image_sequence2 = [Image.open(f"frames/box.{i:04d}.png") for i in range(1, 3)]  # Adjust filenames as needed
+# for i, img in enumerate(image_sequence2):
+#     # Convert black to transparent in each frame
+#     img = convert_black_to_transparent2(img)
+#     # Apply the trail effect by blending with decreasing opacity
+#     final_image = Image.alpha_composite(final_image, img)
 
 # Save or show the result
 final_image.save('frames/trailing_effect2.png')

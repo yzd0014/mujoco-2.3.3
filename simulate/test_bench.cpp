@@ -181,7 +181,7 @@ void scroll(GLFWwindow* window, double xoffset, double yoffset)
     mjv_moveCamera(m, mjMOUSE_ZOOM, 0, -0.05 * yoffset, &scn, &cam);
 }
 
-void Tick(const mjModel* m, mjData* d)
+void SaveDataToMatlab(const mjModel* m, mjData* d, double duration)
 {
     mjtNum dst[9];
     Matrix3d inertia = Matrix3d::Zero();
@@ -202,21 +202,22 @@ void Tick(const mjModel* m, mjData* d)
         std::cout << "det: " << det << std::endl;
     }
 
-    if (d->time <= 8 + 0.0000000001)
+    if (d->time < duration && !smallInertia)
     {
         mjtNum h = 0.001;
         if (d->time == 0 || d->time - oldTime >= h - 0.0000000001)
         {
-            /* mjtNum mPos[3] = { 0, 0, 0 };
-             CoordinateMju2Eae(&d->xpos[3], mPos);
-             fs << d->time << " " << mPos[0] << " " << mPos[1] << " " << mPos[2]
-                 << " " << d->qpos[0] << " " << d->qpos[1] << " " << d->qpos[2] << std::endl;*/
+            mjtNum euler[3];
+            QuatToEuler(&d->xquat[4], euler);
+            //std::cout << "alpha " << d->qpos[0] << " m_alpha " << euler[2] << std::endl;
+            //std::cout << "beta " << d->qpos[1] << " m_beta " << euler[1] << std::endl;
+            //std::cout << "gamma " << d->qpos[2] << " m_gamma " << euler[0] << std::endl << std::endl;
 
-                 /*	mjtNum euler[3];
-                     QuatToEuler(&d->xquat[4], euler);
-                     std::cout << "alpha " << d->qpos[0] << " m_alpha " << euler[2] << std::endl;
-                     std::cout << "beta " << d->qpos[1] << " m_beta " << euler[1] << std::endl;
-                     std::cout << "gamma " << d->qpos[2] << " m_gamma " << euler[0] << std::endl << std::endl;*/
+            mjtNum mPos[3] = { 0, 0, 0 };
+            CoordinateMju2Eae(&d->xpos[3], mPos);
+            fs << d->time << " " << mPos[0] << " " << mPos[1] << " " << mPos[2]
+                << " " << euler[2] << " " << euler[1] << " " << d->qpos[2] << std::endl;
+
             oldTime = d->time;
         }
     }
@@ -224,6 +225,39 @@ void Tick(const mjModel* m, mjData* d)
     {
         start_sim = false;
     }
+}
+
+void SaveDataToHoudini(const mjModel* m, mjData* d, double duration, int numOfFrames)
+{
+  
+    double interval = duration / (numOfFrames - 1);
+    static int frames_saved = 0;
+
+    if (frames_saved < numOfFrames)
+    {
+        if (frames_saved == 0 || d->time - oldTime >= interval - 1e-8)
+        {
+            frames_saved++;
+			mjtNum rotVec[3];
+            mju_quat2Vel(rotVec, &d->xquat[4], 1);
+            mjtNum rotVecEAE[3] = {0, 0, 0};
+            mjtNum posEAE[3] = { 0, 0, 0 };
+            CoordinateMju2Eae(rotVec, rotVecEAE);
+            CoordinateMju2Eae(&d->xpos[3], posEAE);
+			double rotAngle = mju_normalize3(rotVecEAE);
+			fs << frames_saved << "," << posEAE[0] << "," << posEAE[1] << "," << posEAE[2] << "," << rotVecEAE[0] << "," << rotVecEAE[1] << "," << rotVecEAE[2] << "," << rotAngle << std::endl;
+			oldTime = d->time;
+        }
+    }
+	else
+	{
+		start_sim = false;
+	}
+}
+
+void Tick(const mjModel* m, mjData* d)
+{
+	SaveDataToHoudini(m, d, 5, 120);
 }
 
 void InitializeController(const mjModel* m, mjData* d)

@@ -779,6 +779,11 @@ void mj_implicit(const mjModel* m, mjData* d) {
 void mj_forwardSkip(const mjModel* m, mjData* d, int skipstage, int skipsensor) {
   TM_START;
 
+  if (mjcb_fepr)
+  {
+	  mjcb_fepr(m, d);
+  }
+
   // position-dependent
   if (skipstage<mjSTAGE_POS) {
     mj_fwdPosition(m, d);

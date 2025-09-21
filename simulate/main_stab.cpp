@@ -18,16 +18,12 @@
 #include "simulate.h"
 #include "glfw_adapter.h"
 #include "array_safety.h"
-
-std::fstream fs;
-int testCase = -1;
-double oldTime = 0;
-
 #include <Eigen/Eigen>
+
 using namespace Eigen;
 
 char error[1000];
-int mode = 4;
+double oldTime = 0;
 
 mjModel* m = NULL;                  // MuJoCo model
 mjData* d = NULL;                   // MuJoCo data
@@ -47,54 +43,8 @@ bool start_sim = false;
 bool next_step = false;
 unsigned int key_s_counter = 0;
 
-namespace CharaterControl
-{
-    mjtNum torPos[3];
-    mjtNum* J;
-    mjtNum* J_transpose;
-    mjtNum* jointTorque;
-}
 int tickCount = -1;
 
-void CoordinateEae2Mju(mjtNum* i_v, mjtNum* o_v)
-{
-    o_v[0] = i_v[0];
-    o_v[1] = -i_v[2];
-    o_v[2] = i_v[1];
-}
-
-void CoordinateMju2Eae(mjtNum* i_v, mjtNum* o_v)
-{
-	o_v[0] = i_v[0];
-	o_v[1] = i_v[2];
-	o_v[2] = -i_v[1];
-}
-
-Quaterniond ComputeRotOffset()
-{
-    Matrix3d rotOffsetM;
-	rotOffsetM.setIdentity();
-	rotOffsetM.block<3, 1>(0, 0) = Vector3d(0, 0, -1);
-	rotOffsetM.block<3, 1>(0, 1) = Vector3d(0, -1, 0);
-	rotOffsetM.block<3, 1>(0, 2) = Vector3d(-1, 0, 0);
-	Quaterniond rotOffset(rotOffsetM.transpose());
-	return rotOffset;
-}
-
-void QuatToEuler(mjtNum i_quat[4], mjtNum o_Euler[3])
-{
-    Quaterniond rotOffset = ComputeRotOffset();
-    Quaterniond q(i_quat[0], i_quat[1], i_quat[2], i_quat[3]);
-	Quaterniond qEffective = rotOffset * q * rotOffset.inverse();
-    mjtNum r11 = -2 * (qEffective.x() * qEffective.z() - q.w() * qEffective.y());
-    mjtNum r12 = qEffective.w() * qEffective.w() + qEffective.x() * qEffective.x() - qEffective.y() * qEffective.y() - qEffective.z() * qEffective.z();
-	mjtNum r21 = 2 * (qEffective.x() * qEffective.y() + qEffective.w() * qEffective.z());
-	mjtNum r31 = -2 * (qEffective.y() * qEffective.z() - qEffective.w() * qEffective.x());
-	mjtNum r32 = qEffective.w() * qEffective.w() - qEffective.x() * qEffective.x() + qEffective.y() * qEffective.y() - qEffective.z() * qEffective.z();
-	o_Euler[0] = atan2(r31, r32);
-	o_Euler[1] = asin(r21);
-	o_Euler[2] = atan2(r11, r12);
-}
 // keyboard callback
 void keyboard(GLFWwindow* window, int key, int scancode, int act, int mods)
 {
@@ -181,179 +131,28 @@ void scroll(GLFWwindow* window, double xoffset, double yoffset)
     mjv_moveCamera(m, mjMOUSE_ZOOM, 0, -0.05 * yoffset, &scn, &cam);
 }
 
-void SaveDataToMatlab(const mjModel* m, mjData* d, double duration)
-{
-    mjtNum dst[9];
-    Matrix3d inertia = Matrix3d::Zero();
-    mj_fullM(m, dst, d->qM);
-
-    for (int i = 0; i < 3; i++)
-    {
-        for (int j = 0; j < 3; j++)
-        {
-            inertia(i, j) = dst[i * 3 + j];
-        }
-    }
-    mjtNum det = inertia.determinant();
-    bool smallInertia = false;
-    if (det < 1e-7 || d->qacc[2] > 1000000)
-    {
-        smallInertia = true;
-        std::cout << "det: " << det << std::endl;
-    }
-
-    if (d->time < duration && !smallInertia)
-    {
-        mjtNum h = 0.001;
-        if (d->time == 0 || d->time - oldTime >= h - 0.0000000001)
-        {
-            mjtNum euler[3];
-            QuatToEuler(&d->xquat[4], euler);
-            //std::cout << "alpha " << d->qpos[0] << " m_alpha " << euler[2] << std::endl;
-            //std::cout << "beta " << d->qpos[1] << " m_beta " << euler[1] << std::endl;
-            //std::cout << "gamma " << d->qpos[2] << " m_gamma " << euler[0] << std::endl << std::endl;
-
-            mjtNum mPos[3] = { 0, 0, 0 };
-            CoordinateMju2Eae(&d->xpos[3], mPos);
-            fs << d->time << " " << mPos[0] << " " << mPos[1] << " " << mPos[2]
-                << " " << euler[2] << " " << euler[1] << " " << d->qpos[2] << std::endl;
-
-            oldTime = d->time;
-        }
-    }
-    else
-    {
-        start_sim = false;
-    }
-}
-
-void SaveDataToHoudini(const mjModel* m, mjData* d, double duration, int numOfFrames)
-{
-  
-    double interval = duration / (numOfFrames - 1);
-    static int frames_saved = 0;
-
-    if (frames_saved < numOfFrames)
-    {
-        if (frames_saved == 0 || d->time - oldTime >= interval - 1e-8)
-        {
-            frames_saved++;
-			mjtNum rotVec[3];
-            mju_quat2Vel(rotVec, &d->xquat[4], 1);
-            mjtNum rotVecEAE[3] = {0, 0, 0};
-            mjtNum posEAE[3] = { 0, 0, 0 };
-            CoordinateMju2Eae(rotVec, rotVecEAE);
-            CoordinateMju2Eae(&d->xpos[3], posEAE);
-			double rotAngle = mju_normalize3(rotVecEAE);
-			fs << frames_saved << "," << posEAE[0] << "," << posEAE[1] << "," << posEAE[2] << "," << rotVecEAE[0] << "," << rotVecEAE[1] << "," << rotVecEAE[2] << "," << rotAngle << std::endl;
-			oldTime = d->time;
-        }
-    }
-	else
-	{
-		start_sim = false;
-	}
-}
-
 void Tick(const mjModel* m, mjData* d)
+{ 
+	std::cout << "total energy " << d->energy[0] + d->energy[1] << std::endl;
+}
+
+void StabilizationController(const mjModel* m, mjData* d)
 {
-	//SaveDataToHoudini(m, d, 5, 120);
-    if (testCase == 5) //twist invarience for two ball joints
-    {
-        if (d->qpos[1] > M_PI / 2 || d->qpos[1] < -M_PI / 2)
-        {
-            start_sim = false;
-            std::cout << "singularity reached" << std::endl;
-        }
-    }
+    d->qvel[0] = d->qvel[0] + 0.01;
 }
 
 void InitializeController(const mjModel* m, mjData* d)
 {
-    if (testCase == 0)
-    {
-        d->qpos[1] = M_PI / 4;
-        d->qvel[2] = 2;
-    }
-	else if (testCase == 1)
-    {
-        d->qpos[0] = -M_PI / 4;
-        d->qvel[2] = 2;
-    }
-	else if (testCase == 2)
-    {
-        d->qvel[0] = 2;
-        d->qvel[1] = 2;
-        d->qvel[2] = 0;
-    }
-    else if (testCase == 3) //lock chain mimic
-    {
-        d->qvel[0] = 0;
-        d->qvel[1] = 4;
-        d->qvel[2] = -2;
-    }
-	else if (testCase == 4) //twist invarience for two ball joints
-    {
-        d->qpos[1] = M_PI / 4;
-        d->qvel[0] = -2.8284;
-        d->qvel[2] = 2;
-    }
-    else if (testCase == 5) //twist invarience for two ball joints
-    {
-        mjtNum e = 1;
-        mjtNum betaDot = 5;
-        d->qvel[0] = e * betaDot;
-        d->qvel[1] = betaDot;
-        d->qvel[2] = 0;
-    }
-
-    mj_forward(m, d);
-    mjcb_control= Tick;
-}
-
-void CleanController()
-{
-    delete CharaterControl::J;
-    delete CharaterControl::J_transpose;
-    delete CharaterControl::jointTorque;
+    mjcb_control = Tick;
+    //mjcb_fepr = StabilizationController;
+    mj_resetDataKeyframe(m, d, 0);
+	mj_forward(m, d);
 }
 
 int main(int argc, char* argv[])
 {
     // load model from file and check for errors
-    fs.open("../matlab/plot.csv", std::ios::out | std::ios::app);
-    for (int i = 1; i < argc; i++)
-    {
-        std::string arg = argv[i];
-        if (arg == "-example" && i + 1 < argc)
-        {
-			testCase = std::stoi(argv[i + 1]);
-        }
-    }
-    if (testCase == 0)
-    {
-        m = mj_loadXML("example0.xml", NULL, error, 1000);
-    }
-    else if (testCase == 1)
-    {
-        m = mj_loadXML("example1.xml", NULL, error, 1000);
-    }
-    else if (testCase == 2)
-    {
-        m = mj_loadXML("example2.xml", NULL, error, 1000);
-    }
-    else if (testCase == 3)
-    {
-        m = mj_loadXML("example3.xml", NULL, error, 1000);
-    }
-    else if (testCase == 4)
-    {
-        m = mj_loadXML("example4.xml", NULL, error, 1000);
-    }
-    else if (testCase == 5)
-    {
-        m = mj_loadXML("three_hinge_cube.xml", NULL, error, 1000);
-    }
+    m = mj_loadXML("stab/ball_joints_5.xml", NULL, error, 1000);
 
     if (!m)
     {
@@ -399,6 +198,7 @@ int main(int argc, char* argv[])
     cam.lookat[2] = arr_view[5];
 
     InitializeController(m, d);
+   
     // run main loop, target real-time simulation and 60 fps rendering
     while (!glfwWindowShouldClose(window)) {
         if (start_sim || next_step)
@@ -414,7 +214,7 @@ int main(int argc, char* argv[])
             }
             next_step = false;
         }
-        if (tickCount >= 5000) break;
+        //if (tickCount >= 5000) break;
         // get framebuffer viewport
         mjrRect viewport = { 0, 0, 0, 0 };
         glfwGetFramebufferSize(window, &viewport.width, &viewport.height);
@@ -428,8 +228,7 @@ int main(int argc, char* argv[])
 
         // process pending GUI events, call GLFW callbacks
         glfwPollEvents();
-    }
-    CleanController();
+    } 
 
     // close GLFW, free visualization storage
     glfwTerminate();
@@ -437,6 +236,6 @@ int main(int argc, char* argv[])
     mjr_freeContext(&con);
 
     mj_deleteData(d);
-    fs.close();
+ 
     return 0;
 }

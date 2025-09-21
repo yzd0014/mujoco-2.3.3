@@ -25,6 +25,7 @@ extern "C" {
 // global callback function pointers
 MJAPI extern mjfGeneric  mjcb_passive;
 MJAPI extern mjfGeneric  mjcb_control;
+MJAPI extern mjfGeneric  mjcb_fepr;
 MJAPI extern mjfConFilt  mjcb_contactfilter;
 MJAPI extern mjfSensor   mjcb_sensor;
 MJAPI extern mjfTime     mjcb_time;

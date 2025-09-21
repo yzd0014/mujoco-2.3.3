@@ -18,6 +18,7 @@
 #include "simulate.h"
 #include "glfw_adapter.h"
 #include "array_safety.h"
+#include <helper.h>
 #include <Eigen/Eigen>
 
 using namespace Eigen;
@@ -45,6 +46,8 @@ unsigned int key_s_counter = 0;
 
 int tickCount = -1;
 
+mjtNum totalEnergy0 = 0;
+mjtNum* dst = nullptr;
 // keyboard callback
 void keyboard(GLFWwindow* window, int key, int scancode, int act, int mods)
 {
@@ -133,20 +136,85 @@ void scroll(GLFWwindow* window, double xoffset, double yoffset)
 
 void Tick(const mjModel* m, mjData* d)
 { 
-	std::cout << "total energy " << d->energy[0] + d->energy[1] << std::endl;
+	std::cout << "total energy " << d->energy[0] + d->energy[1] << std::endl << std::endl;
 }
 
 void StabilizationController(const mjModel* m, mjData* d)
 {
-    d->qvel[0] = d->qvel[0] + 0.01;
+    //d->qvel[0] = d->qvel[0] + 0.01;
+    VectorXd qdot;
+    qdot.resize(m->nv);
+    CopyVectorMjtoEigen(d->qvel, qdot, m->nv);
+	//std::cout << "qdot before: " << qdot.transpose() << std::endl;
+
+    int energeMomentumConstraintDim = 1;
+    int nq = m->nv;
+    int n = nq + energeMomentumConstraintDim;
+
+    VectorXd mq(nq);
+    mq.setZero();
+    mq.segment(0, m->nv) = qdot;
+
+    MatrixXd grad_C(energeMomentumConstraintDim, nq);
+    grad_C.setZero();
+
+	mj_fullM(m, dst, d->qM);
+    MatrixXd Mr(m->nv, m->nv);
+    CopyMatrixMjtoEigen(dst, Mr, m->nv, m->nv);
+
+    MatrixXd DInv;
+    DInv = Mr.inverse();
+
+    mjtNum kineticEnergyExpected = totalEnergy0 - d->energy[0];
+
+    mjtNum energyErr = 1.0;
+    MatrixXd C(energeMomentumConstraintDim, 1);
+    MatrixXd lambdaNew(energeMomentumConstraintDim, 1);
+    int iter = 0;
+    while (energyErr > 1e-3)
+    {
+        C(0, 0) = 0.5 * (mq.segment(0, m->nv).transpose() * Mr * mq.segment(0, m->nv))(0, 0) - kineticEnergyExpected;
+		//std::cout << "C: " << C << std::endl;
+        grad_C.block(0, 0, 1, m->nv) = (Mr * mq.segment(0, m->nv)).transpose();
+		//std::cout << "grad_C: " << grad_C << std::endl;
+
+		MatrixXd K = grad_C * DInv * grad_C.transpose();
+        if (K.determinant() < 1e-10)
+        {
+            std::cout << "singularity in energy constraint" << std::endl;
+            break;
+		}
+        lambdaNew = K.inverse() * C;
+        //std::cout << "lambdaNew: " << lambdaNew << std::endl;
+        mq = mq - DInv * grad_C.transpose() * lambdaNew;
+		//std::cout << "mq: " << mq.transpose() << std::endl;
+
+        //ForwardAngularAndTranslationalVelocity(mq);
+		CopyVectorEigentoMj(mq, d->qvel, m->nv);
+        mj_energyVel(m, d);
+        energyErr = fabs(d->energy[1] - kineticEnergyExpected);
+        iter++;
+    }
+    qdot = mq;
+	CopyVectorEigentoMj(qdot, d->qvel, m->nv);
+    std::cout << "energy constraint iter: " << iter <<  "error: " << energyErr << std::endl;
 }
 
 void InitializeController(const mjModel* m, mjData* d)
 {
-    mjcb_control = Tick;
-    //mjcb_fepr = StabilizationController;
+    dst = new mjtNum[m->nv * m->nv];
+  
     mj_resetDataKeyframe(m, d, 0);
 	mj_forward(m, d);
+	totalEnergy0 = d->energy[0] + d->energy[1];
+
+    mjcb_control = Tick;
+    mjcb_fepr = StabilizationController;
+}
+
+void CleanController()
+{
+    delete[] dst;
 }
 
 int main(int argc, char* argv[])
@@ -234,8 +302,8 @@ int main(int argc, char* argv[])
     glfwTerminate();
     mjv_freeScene(&scn);
     mjr_freeContext(&con);
-
+    CleanController();
     mj_deleteData(d);
- 
+    
     return 0;
 }
